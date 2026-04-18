@@ -1298,19 +1298,23 @@ function setTheme(el, name){
   toast(`🎨 Tema ${name||'Dark'} activado`);
 }
 
-// ==================== NUEVA FUNCIÓN: EJECUTAR PYTHON ====================
-async function runCode(){
+<script>
+// ==================== FUNCIÓN EJECUTAR PYTHON (VERSIÓN DEBUG) ====================
+async function runCode() {
   const textarea = document.getElementById('codeExec');
   const code = textarea.value.trim();
-  
+  const resultDiv = document.getElementById('codeResult');
+
   if (!code) {
     toast('⚠️ Escribe código Python primero');
     return;
   }
 
-  const resultDiv = document.getElementById('codeResult');
   resultDiv.textContent = '⏳ Ejecutando en Python...';
   resultDiv.classList.add('on');
+  resultDiv.style.color = ''; // reset color
+
+  console.log('%c[RUN CODE] Enviando código:', 'color:#6366f1;font-weight:bold', code);
 
   try {
     const res = await fetch(API + '/execute', {
@@ -1319,17 +1323,29 @@ async function runCode(){
       body: JSON.stringify({ code: code, session_id: sid })
     });
 
-    const data = await res.json();
+    console.log('%c[RUN CODE] Status recibido:', 'color:#10b981', res.status);
 
-    if (data.output !== undefined) {
-      resultDiv.innerHTML = `<pre style="margin:0; white-space:pre-wrap; font-family:Consolas,monospace; font-size:13px;">${esc(data.output)}</pre>`;
-    } else if (data.error) {
-      resultDiv.innerHTML = `<span style="color:var(--red)">❌ ${esc(data.error)}</span>`;
-    } else {
-      resultDiv.textContent = '✅ Ejecutado (sin salida)';
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} - ${res.statusText}`);
     }
-  } catch (e) {
-    resultDiv.innerHTML = `<span style="color:var(--red)">⚠️ Error de conexión al ejecutar código</span>`;
+
+    const data = await res.json();
+    console.log('%c[RUN CODE] Respuesta del backend:', 'color:#10b981', data);
+
+    if (data.output !== undefined && data.output !== '') {
+      resultDiv.innerHTML = `<pre style="margin:0; white-space:pre-wrap; font-family:Consolas,monospace; font-size:13px; background:#0f172a; padding:12px; border-radius:8px;">${esc(data.output)}</pre>`;
+    } 
+    else if (data.error) {
+      resultDiv.innerHTML = `<span style="color:#f87171">❌ ${esc(data.error)}</span>`;
+    } 
+    else {
+      resultDiv.innerHTML = `<span style="color:#4ade80">✅ Ejecutado correctamente (sin salida visible)</span>`;
+    }
+  } 
+  catch (e) {
+    console.error('%c[RUN CODE] ERROR:', 'color:#f87171', e);
+    resultDiv.innerHTML = `<span style="color:#f87171">⚠️ ${e.message || 'Error de conexión'}</span>`;
+    toast('❌ Error al ejecutar código. Revisa la consola (F12)');
   }
 }
 </script>
