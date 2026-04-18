@@ -712,16 +712,31 @@ def chat():
     if sid not in convs: convs[sid] = []
 
     try:
-        convs[sid].append({"role":"user","content":msg})
+       convs[sid].append({"role":"user","content":msg})
 
-        r = get_groq().chat.completions.create(
-            model=model,
-            messages=[
-                {"role":"system","content":system}
-            ] + convs[sid][-20:],
-            temperature=0.8,
-            max_tokens=1500
-        )
+# Limitar historial según el modelo
+# LLaMA 8B tiene límite bajo de tokens
+max_hist = 6 if model == MODELS["fast"] else 14
+
+# Truncar mensajes largos del historial
+def truncate_msg(m, max_chars=500):
+    if len(m["content"]) > max_chars:
+        return {"role": m["role"],
+                "content": m["content"][:max_chars] + "..."}
+    return m
+
+historial_seguro = [
+    truncate_msg(m) for m in convs[sid][-max_hist:]
+]
+
+r = get_groq().chat.completions.create(
+    model=model,
+    messages=[
+        {"role":"system","content":system[:2000]}
+    ] + historial_seguro,
+    temperature=0.8,
+    max_tokens=1000
+)
         response = r.choices[0].message.content
 
         # Multi-IA verificación
