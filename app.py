@@ -333,9 +333,7 @@ def execute_python(code, timeout=10):
             "fractions":  __import__("fractions"),
             "string":     __import__("string"),
         }
-        safe_locals = {}
-
-        exec(compile(code, "<deepnova>", "exec"), safe_globals, safe_locals)
+                exec(compile(code, "<deepnova>", "exec"), safe_globals)
 
         output  = sys.stdout.getvalue()
         success = True
