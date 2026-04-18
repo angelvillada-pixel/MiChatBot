@@ -551,17 +551,28 @@ def analyze_image(img_b64, prompt):
             messages=[{
                 "role":"user",
                 "content":[
-                    {"type":"text","text":prompt},
+                    {"type":"text",
+                     "text": prompt[:500]},  # limitar prompt
                     {"type":"image_url","image_url":{
                         "url":f"data:image/jpeg;base64,{img_b64}"
                     }}
                 ]
             }],
-            max_tokens=1000
+            max_tokens=800
         )
         return r.choices[0].message.content
+
     except Exception as e:
-        return f"Error analizando imagen: {str(e)}"
+        err = str(e)
+        # Si el modelo vision falla, intentar con descripción texto
+        if "decommissioned" in err or "not supported" in err:
+            return ("El análisis de imágenes no está disponible "
+                    "con el modelo actual. Intenta describir "
+                    "la imagen en texto.")
+        if "413" in err or "too large" in err:
+            return ("La imagen es muy grande. "
+                    "Usa una imagen más pequeña (menos de 1MB).")
+        return f"Error analizando imagen: {err}"
 
 # ══════════════════════════════════════════
 # COMANDOS RÁPIDOS
