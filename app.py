@@ -20,9 +20,10 @@ def get_groq():
 MODELS = {
     "fast":    "llama-3.1-8b-instant",
     "smart":   "llama-3.3-70b-versatile",
-    "reason":  "llama-3.3-70b-versatile",
-    "creative":"llama-3.1-8b-instant",
-    "vision":  "meta-llama/llama-4-scout-17b-16e-instruct",
+    "reason":  "qwen/qwen3-32b",                           # mejor razonamiento
+    "creative":"groq/compound",                             # modelo compuesto
+    "vision":  "meta-llama/llama-4-scout-17b-16e-instruct",# imágenes ✅
+    "whisper": "whisper-large-v3-turbo",                   # voz a texto ✅
 }
 
 # ══════════════════════════════════════════
