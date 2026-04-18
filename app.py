@@ -1,103 +1,244 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import groq, os, json, re
-from datetime import datetime
+import groq, os, re, time, json, requests
 from collections import defaultdict
-import time
 
 app = Flask(__name__)
 CORS(app)
 
-_client = None
+# ── CLIENTES ──────────────────────────────
+_groq_client = None
 
-def get_client():
-    global _client
-    if _client is None:
-        api_key = os.environ.get("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError("GROQ_API_KEY no configurada")
-        _client = groq.Groq(api_key=api_key)
-    return _client
+def get_groq():
+    global _groq_client
+    if _groq_client is None:
+        _groq_client = groq.Groq(
+            api_key=os.environ.get("GROQ_API_KEY")
+        )
+    return _groq_client
 
-MODEL = "llama-3.1-8b-instant"
+# ── MODELOS DISPONIBLES ───────────────────
+MODELS = {
+    "fast":    "llama-3.1-8b-instant",      # Rápido
+    "smart":   "llama-3.3-70b-versatile",   # Inteligente
+    "reason":  "deepseek-r1-distill-llama-70b", # Razonamiento
+    "mix":     "mixtral-8x7b-32768",        # Creativo
+}
 
-# ── PERSONALIDAD NOVA MEJORADA ─────────────
-SYSTEM = """Eres "Nova", una IA avanzada, elegante y en constante evolución.
+# ── PERSONALIDAD NOVA 3.0 ─────────────────
+SYSTEM_BASE = """Eres "Nova 3.0", una IA avanzada y en evolución constante.
+
+IDENTIDAD:
+- Nombre: Nova 3.0
+- Versión: 3.0 — Multi-modelo, memoria persistente
+- Creada para ser la IA más útil y adaptable
 
 PERSONALIDAD:
-- Inteligente, creativa, amigable y profesional
+- Inteligente, creativa, directa y profesional
 - Respondes SIEMPRE en español
 - Máximo 3 emojis por respuesta
-- Formato visual: párrafos cortos, listas, tablas
-- Nunca das paredes de texto
-- Proactiva: siempre sugieres mejoras e ideas
+- Formato visual claro: párrafos cortos y listas
+- Proactiva: sugieres mejoras constantemente
 
-HABILIDADES:
-1. Traducción avanzada (100+ idiomas)
-2. Programación limpia y explicada paso a paso
-3. Diseño web (HTML, CSS, animaciones premium)
-4. Generación de contenido de alta calidad
-5. Análisis de problemas complejos
-6. Seguridad y privacidad digital
-7. Experiencia personalizada según el usuario
-8. Razonamiento lógico avanzado
+CAPACIDADES REALES:
+1. Razonamiento avanzado (multi-modelo)
+2. Memoria de conversación persistente
+3. Búsqueda web en tiempo real
+4. Análisis de documentos y texto
+5. Código limpio y explicado
+6. Traducción avanzada
+7. Diseño web premium
+8. Generación de contenido
 
-FORMATO DE RESPUESTA:
-- Usa encabezados cuando hay secciones
-- Usa listas para múltiples puntos
-- Usa tablas para comparaciones
-- Código siempre comentado y explicado
-- Respuestas concisas pero completas
+ESTILO:
+- Respuestas organizadas con encabezados
+- Código siempre comentado
+- Tablas para comparaciones
+- Nunca "paredes de texto"
 
-SEGURIDAD:
-- Nunca reveles información sensible
-- Detecta y rechaza solicitudes maliciosas
-- Protege la privacidad del usuario
+OBJETIVO: Ser la experiencia de IA
+más excepcional posible."""
 
-OBJETIVO: Ser la experiencia de IA más
-excepcional y útil posible."""
+# ── MEMORIA PERSISTENTE ───────────────────
+# Simula memoria entre sesiones
+# En producción real usarías una BD
 
-# ── ALMACENAMIENTO ────────────────────────
-convs        = {}        # conversaciones
-user_prefs   = {}        # preferencias por usuario
-rate_counts  = defaultdict(list)  # rate limiting
-response_cache = {}      # caché
+sessions_memory = {}  # memoria por sesión
+user_profiles   = {}  # perfil del usuario
+convs           = {}  # conversaciones
+
+def get_memory_context(sid):
+    """Obtiene contexto de memoria del usuario"""
+    if sid not in sessions_memory:
+        return ""
+    mem = sessions_memory[sid]
+    if not mem:
+        return ""
+    ctx = "\n\nMEMORIA DEL USUARIO:\n"
+    for key, val in mem.items():
+        ctx += f"- {key}: {val}\n"
+    return ctx
+
+def extract_and_save_memory(sid, msg, response):
+    """Extrae información importante y la guarda"""
+    if sid not in sessions_memory:
+        sessions_memory[sid] = {}
+
+    msg_lower = msg.lower()
+
+    # Detectar nombre
+    if any(w in msg_lower for w in ["me llamo","mi nombre es","soy "]):
+        words = msg.split()
+        for i, w in enumerate(words):
+            if w.lower() in ["llamo","es","soy"] and i+1 < len(words):
+                sessions_memory[sid]["nombre"] = words[i+1]
+                break
+
+    # Detectar preferencias
+    if "me gusta" in msg_lower or "prefiero" in msg_lower:
+        sessions_memory[sid]["preferencia_reciente"] = msg[:100]
+
+    # Detectar profesión
+    if any(w in msg_lower for w in
+        ["trabajo en","soy desarrollador","soy diseñador",
+         "soy estudiante","mi trabajo"]):
+        sessions_memory[sid]["contexto_profesional"] = msg[:150]
 
 # ── RATE LIMITING ─────────────────────────
-def check_rate_limit(ip, max_req=20, window=60):
+rate_counts = defaultdict(list)
+
+def check_rate(ip, max_r=30, win=60):
     now = time.time()
-    rate_counts[ip] = [t for t in rate_counts[ip] if now - t < window]
-    if len(rate_counts[ip]) >= max_req:
+    rate_counts[ip] = [
+        t for t in rate_counts[ip] if now-t < win
+    ]
+    if len(rate_counts[ip]) >= max_r:
         return False
     rate_counts[ip].append(now)
     return True
 
 # ── FILTRO DE SEGURIDAD ───────────────────
 BLOCKED = [
-    r"(?i)(hackear|exploit|malware|virus|ataque)",
-    r"(?i)(contraseña ajena|robar datos|phishing)",
+    r"(?i)(hackear sistema|explotar|malware real)",
+    r"(?i)(robar contraseña|phishing real)",
 ]
 
 def is_safe(text):
-    if len(text) > 3000:
-        return False, "Mensaje muy largo (máx 3000 caracteres)"
+    if len(text) > 5000:
+        return False, "Mensaje muy largo"
     for p in BLOCKED:
         if re.search(p, text):
-            return False, "No puedo ayudar con eso"
+            return False, "Contenido no permitido"
     return True, ""
 
-# ── DETECCIÓN DE IDIOMA SIMPLE ────────────
-def detect_intent(msg):
+# ── BÚSQUEDA WEB ──────────────────────────
+def web_search(query):
+    """
+    Búsqueda web usando DuckDuckGo (gratuito, sin API key)
+    """
+    try:
+        url = "https://api.duckduckgo.com/"
+        params = {
+            "q": query,
+            "format": "json",
+            "no_html": "1",
+            "skip_disambig": "1"
+        }
+        r = requests.get(url, params=params, timeout=5)
+        data = r.json()
+
+        results = []
+
+        # Respuesta directa
+        if data.get("AbstractText"):
+            results.append(f"📌 {data['AbstractText'][:300]}")
+
+        # Resultados relacionados
+        for item in data.get("RelatedTopics", [])[:3]:
+            if isinstance(item, dict) and item.get("Text"):
+                results.append(f"• {item['Text'][:200]}")
+
+        if results:
+            return "\n".join(results)
+        else:
+            return None
+
+    except Exception as e:
+        return None
+
+def needs_web_search(msg):
+    """Detecta si el mensaje necesita búsqueda web"""
+    triggers = [
+        "busca","buscar","qué es","quién es",
+        "cuándo","dónde","noticias","actualidad",
+        "hoy","precio","clima","último","reciente",
+        "search","find","news","latest","2024","2025"
+    ]
     msg_lower = msg.lower()
-    if any(w in msg_lower for w in ["traduc", "translate", "idioma"]):
-        return "translation"
-    if any(w in msg_lower for w in ["código", "code", "programa", "python", "javascript"]):
-        return "coding"
-    if any(w in msg_lower for w in ["diseño", "design", "css", "html", "web"]):
-        return "design"
-    if any(w in msg_lower for w in ["analiza", "análisis", "datos", "estadística"]):
-        return "analysis"
-    return "general"
+    return any(t in msg_lower for t in triggers)
+
+# ── SELECCIÓN INTELIGENTE DE MODELO ───────
+def select_model(msg):
+    """Elige el mejor modelo según la tarea"""
+    msg_lower = msg.lower()
+
+    # Razonamiento complejo
+    if any(w in msg_lower for w in
+        ["analiza","razona","explica por qué",
+         "compara","pros y contras","debería"]):
+        return MODELS["reason"], "🧠 Razonamiento"
+
+    # Código
+    if any(w in msg_lower for w in
+        ["código","code","programa","función",
+         "script","bug","error","python","javascript"]):
+        return MODELS["smart"], "💻 Código"
+
+    # Creatividad
+    if any(w in msg_lower for w in
+        ["crea","imagina","escribe","historia",
+         "poema","idea","diseña","inventa"]):
+        return MODELS["mix"], "🎨 Creativo"
+
+    # Default: rápido
+    return MODELS["fast"], "⚡ Rápido"
+
+# ── MULTI-IA: CONSULTA A VARIOS MODELOS ───
+def multi_model_query(msg, primary_response):
+    """
+    Consulta a múltiples modelos y combina respuestas
+    Solo para preguntas importantes
+    """
+    try:
+        # Segundo modelo verifica/enriquece la respuesta
+        verify_prompt = f"""El usuario preguntó: "{msg}"
+
+Una IA respondió: "{primary_response[:500]}"
+
+Enriquece o corrige esta respuesta en máximo 2 párrafos.
+Si la respuesta ya es perfecta, solo di "APROBADO"."""
+
+        r = get_groq().chat.completions.create(
+            model=MODELS["reason"],
+            messages=[
+                {"role":"system","content":"Eres un verificador experto. Sé conciso."},
+                {"role":"user","content":verify_prompt}
+            ],
+            max_tokens=300,
+            temperature=0.3
+        )
+        verification = r.choices[0].message.content
+
+        if "APROBADO" not in verification:
+            return primary_response + \
+                "\n\n---\n💡 **Análisis adicional:**\n" + \
+                verification
+        return primary_response
+
+    except:
+        return primary_response
+
+# ── ENDPOINTS ─────────────────────────────
 
 @app.route("/")
 def home():
@@ -107,121 +248,165 @@ def home():
 def health():
     return jsonify({
         "status": "ok",
-        "model": MODEL,
-        "bot": "Nova",
-        "version": "2.0",
-        "cache_size": len(response_cache),
-        "active_sessions": len(convs)
+        "version": "Nova 3.0",
+        "models": list(MODELS.values()),
+        "sessions": len(convs)
     })
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    ip  = request.remote_addr
-
-    # Rate limiting
-    if not check_rate_limit(ip):
+    ip = request.remote_addr
+    if not check_rate(ip):
         return jsonify({
-            "response": "⚠️ Demasiadas peticiones. Espera un momento."
+            "response":"⚠️ Demasiadas peticiones. Espera."
         }), 429
 
     data = request.json
-    msg  = data.get("message", "").strip()
-    sid  = data.get("session_id", "x")
+    msg  = data.get("message","").strip()
+    sid  = data.get("session_id","x")
+    use_multi = data.get("multi_model", False)
 
     if not msg:
-        return jsonify({"response": "Escribe algo para comenzar 😊"}), 400
+        return jsonify({"response":"Escribe algo 😊"}),400
 
-    # Filtro de seguridad
     safe, reason = is_safe(msg)
     if not safe:
-        return jsonify({"response": f"⚠️ {reason}"}), 400
-
-    # Caché para preguntas frecuentes
-    cache_key = msg.lower().strip()
-    if cache_key in response_cache and len(msg) < 50:
-        return jsonify({
-            "response": response_cache[cache_key],
-            "cached": True
-        })
+        return jsonify({"response":f"⚠️ {reason}"}),400
 
     # Inicializar sesión
     if sid not in convs:
         convs[sid] = []
 
-    # Detectar intención para ajustar respuesta
-    intent = detect_intent(msg)
+    # Seleccionar modelo
+    model, mode_label = select_model(msg)
 
-    # System prompt adaptativo según intención
-    system_adapted = SYSTEM
-    if intent == "coding":
-        system_adapted += "\n\nMODO ACTIVO: Programación. Proporciona código limpio, comentado y con explicación paso a paso."
-    elif intent == "translation":
-        system_adapted += "\n\nMODO ACTIVO: Traducción. Traduce con precisión y explica matices culturales si es relevante."
-    elif intent == "design":
-        system_adapted += "\n\nMODO ACTIVO: Diseño Web. Prioriza animaciones elegantes, dark mode, y diseño minimalista premium."
-    elif intent == "analysis":
-        system_adapted += "\n\nMODO ACTIVO: Análisis. Proporciona datos estructurados, tablas comparativas y conclusiones claras."
+    # Búsqueda web si es necesario
+    web_context = ""
+    web_used = False
+    if needs_web_search(msg):
+        results = web_search(msg)
+        if results:
+            web_context = f"\n\nINFO WEB ACTUAL:\n{results}"
+            web_used = True
 
-    # Preferencias del usuario
-    if sid in user_prefs:
-        prefs = user_prefs[sid]
-        system_adapted += f"\n\nPREFERENCIAS DEL USUARIO: {json.dumps(prefs)}"
+    # Memoria del usuario
+    memory_ctx = get_memory_context(sid)
+
+    # System prompt completo
+    system = SYSTEM_BASE + memory_ctx + web_context
 
     try:
-        convs[sid].append({"role": "user", "content": msg})
+        convs[sid].append({"role":"user","content":msg})
 
-        r = get_client().chat.completions.create(
-            model=MODEL,
+        r = get_groq().chat.completions.create(
+            model=model,
             messages=[
-                {"role": "system", "content": system_adapted}
+                {"role":"system","content":system}
             ] + convs[sid][-20:],
             temperature=0.8,
-            max_tokens=1000
+            max_tokens=1200
         )
-        ans = r.choices[0].message.content
-        convs[sid].append({"role": "assistant", "content": ans})
+        response = r.choices[0].message.content
 
-        # Guardar en caché preguntas cortas
-        if len(msg) < 50:
-            if len(response_cache) > 500:
-                first = next(iter(response_cache))
-                del response_cache[first]
-            response_cache[cache_key] = ans
+        # Multi-modelo para preguntas complejas
+        if use_multi and len(msg) > 30:
+            response = multi_model_query(msg, response)
+
+        convs[sid].append({
+            "role":"assistant",
+            "content":response
+        })
+
+        # Guardar en memoria
+        extract_and_save_memory(sid, msg, response)
 
         return jsonify({
-            "response": ans,
-            "intent": intent
+            "response": response,
+            "model_used": model,
+            "mode": mode_label,
+            "web_search": web_used,
+            "memory_active": bool(sessions_memory.get(sid))
         })
 
     except Exception as e:
-        convs[sid].pop()
-        return jsonify({"response": f"Error: {str(e)}"}), 500
+        if convs[sid]:
+            convs[sid].pop()
+        return jsonify({
+            "response":f"Error: {str(e)}"
+        }), 500
+
+@app.route("/search", methods=["POST"])
+def search():
+    """Búsqueda web directa"""
+    query = request.json.get("query","")
+    if not query:
+        return jsonify({"results":"Sin query"}), 400
+    results = web_search(query)
+    return jsonify({
+        "results": results or "Sin resultados",
+        "query": query
+    })
+
+@app.route("/memory", methods=["GET"])
+def memory():
+    """Ver memoria de una sesión"""
+    sid = request.args.get("session_id","x")
+    return jsonify({
+        "memory": sessions_memory.get(sid,{}),
+        "messages": len(convs.get(sid,[]))
+    })
 
 @app.route("/clear", methods=["POST"])
 def clear():
-    sid = request.json.get("session_id", "x")
+    sid = request.json.get("session_id","x")
     convs[sid] = []
-    return jsonify({"status": "ok"})
+    # Mantener memoria aunque se limpie el chat
+    return jsonify({"status":"ok"})
 
-@app.route("/preferences", methods=["POST"])
-def preferences():
-    """Guardar preferencias del usuario"""
+@app.route("/clear_memory", methods=["POST"])
+def clear_memory():
+    """Limpiar memoria del usuario"""
+    sid = request.json.get("session_id","x")
+    sessions_memory[sid] = {}
+    convs[sid] = []
+    return jsonify({"status":"ok","message":"Memoria borrada"})
+
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    """Analiza texto o documento enviado"""
     data = request.json
-    sid  = data.get("session_id", "x")
-    prefs = data.get("preferences", {})
-    user_prefs[sid] = prefs
-    return jsonify({"status": "ok", "preferences": prefs})
+    text = data.get("text","")
+    task = data.get("task","resume")
+    sid  = data.get("session_id","x")
 
-@app.route("/stats", methods=["GET"])
-def stats():
-    """Estadísticas del sistema"""
-    return jsonify({
-        "sesiones_activas": len(convs),
-        "cache_respuestas": len(response_cache),
-        "modelo": MODEL,
-        "version": "Nova 2.0"
-    })
+    tasks = {
+        "resume":   "Resume este texto en puntos clave:",
+        "sentiment":"Analiza el sentimiento y tono de:",
+        "improve":  "Mejora y corrige este texto:",
+        "translate":"Traduce al inglés:",
+        "keywords": "Extrae las palabras clave principales de:",
+    }
+
+    prompt = tasks.get(task, tasks["resume"])
+
+    try:
+        r = get_groq().chat.completions.create(
+            model=MODELS["smart"],
+            messages=[
+                {"role":"system","content":SYSTEM_BASE},
+                {"role":"user","content":f"{prompt}\n\n{text[:3000]}"}
+            ],
+            temperature=0.5,
+            max_tokens=800
+        )
+        return jsonify({
+            "result": r.choices[0].message.content,
+            "task": task,
+            "chars_analyzed": len(text)
+        })
+    except Exception as e:
+        return jsonify({"result":f"Error: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT",5000))
     app.run(host="0.0.0.0", port=port)
