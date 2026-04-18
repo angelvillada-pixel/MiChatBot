@@ -22,7 +22,7 @@ MODELS = {
     "smart":   "llama-3.3-70b-versatile",
     "reason":  "llama-3.3-70b-versatile",
     "creative":"llama-3.1-8b-instant",
-    "vision":  "llama-3.2-11b-vision-preview",
+    "vision":  "meta-llama/llama-4-scout-17b-16e-instruct",
 }
 
 # ══════════════════════════════════════════
