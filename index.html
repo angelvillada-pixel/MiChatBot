@@ -460,18 +460,84 @@ html,body{
 .vi.on{display:flex}
 .vd{width:9px;height:9px;background:var(--red);border-radius:50%;animation:vdA .6s infinite alternate}
 @keyframes vdA{from{opacity:1}to{opacity:.2}}
-
-/* ── RESPONSIVE ── */
-@media(max-width:900px){
-  .app{grid-template-columns:1fr}
-  .sidebar,.rp{display:none}
-  .chat-main{border:none;width:100vw}
+  #logoUp,#imgUp{
+  display:none!important;
+  position:absolute;
+  left:-9999px;
 }
+
+/* ── RESPONSIVE MÓVIL ── */
+.mob-menu-btn{
+  display:none;
+  width:36px;height:36px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--border);
+  border-radius:10px;color:var(--text2);
+  cursor:pointer;font-size:18px;
+  align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.mob-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:998;
+  backdrop-filter:blur(4px);
+}
+.mob-overlay.on{display:block}
+
+@media(max-width:900px){
+  .app{grid-template-columns:1fr!important;width:100vw}
+  .sidebar{
+    position:fixed;
+    left:-280px;top:0;bottom:0;
+    width:270px;z-index:999;
+    transition:left .3s ease;
+    box-shadow:4px 0 20px rgba(0,0,0,0.4);
+  }
+  .sidebar.mob-open{left:0}
+  .rp{display:none!important}
+  .chat-main{width:100vw;border:none}
+  .mob-menu-btn{display:flex}
+  .fl{bottom:14px;right:14px;width:46px;height:46px;font-size:19px}
+  .ft{display:none}
+}
+
 @media(max-width:480px){
-  .ch{padding:9px 11px}
-  .msgs{padding:11px 9px}
-  .iw{padding:9px 10px}
-  .mwrap{max-width:91%}
+  .ch{padding:8px 10px;gap:8px;min-height:54px}
+  .hav{width:36px;height:36px;font-size:15px;border-radius:10px}
+  .hi h3{font-size:13px}
+  .hm{gap:3px;margin-top:1px}
+  .hm span{font-size:10px}
+  .badge{font-size:9px;padding:1px 5px}
+  .ha{gap:4px}
+  .ib{width:30px;height:30px;font-size:12px;border-radius:8px}
+  .mb2{padding:4px 8px;font-size:11px;gap:4px}
+  .md2{width:6px;height:6px}
+  .modes-bar{padding:4px 10px;min-height:28px;gap:4px}
+  .mode-pill{font-size:10px;padding:2px 7px}
+  .modes-label{display:none}
+  .sugs{padding:5px 8px;gap:5px}
+  .sg{font-size:11px;padding:4px 10px}
+  .msgs{padding:10px 8px;gap:12px}
+  .mav{width:30px;height:30px;font-size:13px;border-radius:9px}
+  .mwrap{max-width:88%}
+  .bubble{padding:10px 13px;font-size:13px;line-height:1.65;border-radius:14px}
+  .bubble code{font-size:12px}
+  .bubble pre code{font-size:12px;padding:10px}
+  .mmeta{gap:3px}
+  .mt,.mtag{font-size:9px}
+  .iw{padding:8px 10px}
+  .irow{gap:5px}
+  .imgbtn,.micbtn{width:36px;height:40px;font-size:15px;border-radius:10px}
+  #inp{padding:9px 12px;font-size:13px;border-radius:11px;min-height:40px}
+  #sbtn{width:40px;height:40px;font-size:15px;border-radius:11px}
+  .ifooter{margin-top:4px}
+  .ihint{font-size:10px}
+  .icc{display:none}
+  .typing{padding:0 8px 6px;gap:7px}
+  .tb{padding:9px 12px;border-radius:14px}
+  .tl{font-size:11px}
 }
 </style>
 </head>
@@ -482,6 +548,8 @@ html,body{
   <div class="orb o2"></div>
   <div class="orb o3"></div>
 </div>
+
+<div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 
 <div class="toast" id="toast"></div>
 <div class="vi" id="vi"><div class="vd"></div>Escuchando...</div>
@@ -610,6 +678,7 @@ html,body{
           <span class="badge b-lg"  id="lgB">ES</span>
         </div>
       </div>
+      <button class="mob-menu-btn" onclick="toggleSidebar()">☰</button>
       <div class="ha">
         <div class="mb2" id="multib" onclick="toggleMulti()">
           <div class="md2"></div>Multi-IA
@@ -827,6 +896,15 @@ function toast(m, d=2500){
   setTimeout(()=>t.classList.remove('on'), d);
 }
 
+// Sidebar móvil ← AÑADE AQUÍ DESPUÉS
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('mob-open');
+  document.getElementById('mobOverlay').classList.toggle('on');
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('mob-open');
+  document.getElementById('mobOverlay').classList.remove('on');
+}
 // Logo
 function upLogo(e){
   const f=e.target.files[0]; if(!f) return;
