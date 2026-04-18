@@ -1298,8 +1298,9 @@ function setTheme(el, name){
   toast(`🎨 Tema ${name||'Dark'} activado`);
 }
 
+<!-- ====================== FUNCIÓN EJECUTAR PYTHON ====================== -->
 <script>
-// ==================== FUNCIÓN EJECUTAR PYTHON (VERSIÓN DEBUG) ====================
+// ==================== FUNCIÓN EJECUTAR PYTHON (VERSIÓN CORREGIDA) ====================
 async function runCode() {
   const textarea = document.getElementById('codeExec');
   const code = textarea.value.trim();
@@ -1312,7 +1313,7 @@ async function runCode() {
 
   resultDiv.textContent = '⏳ Ejecutando en Python...';
   resultDiv.classList.add('on');
-  resultDiv.style.color = ''; // reset color
+  resultDiv.style.color = '';
 
   console.log('%c[RUN CODE] Enviando código:', 'color:#6366f1;font-weight:bold', code);
 
@@ -1326,11 +1327,11 @@ async function runCode() {
     console.log('%c[RUN CODE] Status recibido:', 'color:#10b981', res.status);
 
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+      throw new Error(`HTTP ${res.status}`);
     }
 
     const data = await res.json();
-    console.log('%c[RUN CODE] Respuesta del backend:', 'color:#10b981', data);
+    console.log('%c[RUN CODE] Respuesta del servidor:', 'color:#10b981', data);
 
     if (data.output !== undefined && data.output !== '') {
       resultDiv.innerHTML = `<pre style="margin:0; white-space:pre-wrap; font-family:Consolas,monospace; font-size:13px; background:#0f172a; padding:12px; border-radius:8px;">${esc(data.output)}</pre>`;
@@ -1339,15 +1340,16 @@ async function runCode() {
       resultDiv.innerHTML = `<span style="color:#f87171">❌ ${esc(data.error)}</span>`;
     } 
     else {
-      resultDiv.innerHTML = `<span style="color:#4ade80">✅ Ejecutado correctamente (sin salida visible)</span>`;
+      resultDiv.innerHTML = `<span style="color:#4ade80">✅ Ejecutado correctamente (sin salida)</span>`;
     }
   } 
   catch (e) {
     console.error('%c[RUN CODE] ERROR:', 'color:#f87171', e);
-    resultDiv.innerHTML = `<span style="color:#f87171">⚠️ ${e.message || 'Error de conexión'}</span>`;
-    toast('❌ Error al ejecutar código. Revisa la consola (F12)');
+    resultDiv.innerHTML = `<span style="color:#f87171">⚠️ Error: ${e.message || 'Error de conexión'}</span>`;
+    toast('❌ Error al ejecutar. Revisa consola (F12)');
   }
 }
 </script>
+
 </body>
 </html>
