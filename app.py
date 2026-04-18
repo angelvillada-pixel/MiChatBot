@@ -257,7 +257,6 @@ def execute_python(code, timeout=10):
             "success": False
         }
 
-    # Wrapper que captura stdout/stderr
     indented = "\n".join("    " + line for line in code.strip().split("\n"))
     wrapper = f"""
 import sys, io, traceback
@@ -274,43 +273,55 @@ finally:
     print(_out.getvalue(), end='')
 """
 
-    try:
-        result = subprocess.run(
-            ["python3", "-c", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            env={
-                "PATH": "/usr/bin:/bin",
-                "HOME": "/tmp",
-                "PYTHONPATH": ""
+    # Intentar python o python3
+    for cmd in ["python", "python3"]:
+        try:
+            result = subprocess.run(
+                [cmd, "-c", wrapper],
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                env={
+                    "PATH": "/usr/bin:/usr/local/bin:/bin",
+                    "HOME": "/tmp",
+                    "PYTHONPATH": "",
+                    "PYTHONIOENCODING": "utf-8"
+                }
+            )
+
+            output = result.stdout.strip()
+            error  = result.stderr.strip()
+
+            if len(output) > 3000:
+                output = output[:3000] + "\n... (output truncado)"
+
+            return {
+                "output":  output,
+                "error":   error,
+                "success": result.returncode == 0 and not output.startswith("ERROR:")
             }
-        )
 
-        output = result.stdout.strip()
-        error  = result.stderr.strip()
+        except FileNotFoundError:
+            continue  # Intentar con el siguiente comando
+        except subprocess.TimeoutExpired:
+            return {
+                "output":  "",
+                "error":   "⏱️ Tiempo límite excedido (10 segundos)",
+                "success": False
+            }
+        except Exception as e:
+            return {
+                "output":  "",
+                "error":   f"Error del sistema: {str(e)}",
+                "success": False
+            }
 
-        if len(output) > 3000:
-            output = output[:3000] + "\n... (output truncado)"
-
-        return {
-            "output":  output,
-            "error":   error,
-            "success": result.returncode == 0 and not output.startswith("ERROR:")
-        }
-
-    except subprocess.TimeoutExpired:
-        return {
-            "output":  "",
-            "error":   "⏱️ Tiempo límite excedido (10 segundos)",
-            "success": False
-        }
-    except Exception as e:
-        return {
-            "output":  "",
-            "error":   f"Error del sistema: {str(e)}",
-            "success": False
-        }
+    # Si ningún comando funcionó
+    return {
+        "output":  "",
+        "error":   "❌ Python no disponible en el servidor",
+        "success": False
+    }
 
 def extract_python_code(text):
     """Extrae el primer bloque de código Python de un texto"""
