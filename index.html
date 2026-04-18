@@ -634,6 +634,8 @@ html,body{
       <div class="sg" onclick="useSg(this)">🤖 /agente Crea un sitio web</div>
       <div class="sg" onclick="useSg(this)">🎨 Diseña un dashboard premium</div>
       <div class="sg" onclick="useSg(this)">/tarea Revisar código hoy</div>
+      <div class="sg" onclick="useSg(this)">⚡ /ejecutar Calcula los primeros 20 primos</div>
+      <div class="sg" onclick="useSg(this)">🐍 Ejecuta: lista de Fibonacci hasta 1000</div>
     </div>
 
     <!-- Mensajes -->
@@ -735,6 +737,19 @@ html,body{
           <button class="sb2" onclick="doSearch()">🔍</button>
         </div>
         <div class="sres2" id="sr2el"></div>
+      </div>
+
+      <!-- NUEVO PANEL: EJECUTAR PYTHON (agregado exactamente donde pediste) -->
+      <div class="psec">
+        <div class="pt">⚡ Ejecutar Python</div>
+        <textarea class="ata" id="codeExec"
+          placeholder="# Escribe código Python aquí&#10;print('Hola DeepNova')"
+          style="height:100px;font-family:Consolas,monospace;font-size:12px">
+        </textarea>
+        <button class="ab" style="margin-top:6px" onclick="runCode()">
+          ▶ Ejecutar Código
+        </button>
+        <div class="ar" id="codeResult"></div>
       </div>
 
       <div class="psec">
