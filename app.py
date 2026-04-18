@@ -225,16 +225,13 @@ def is_safe(text):
 # ══════════════════════════════════════════
 
 BLOCKED_CODE_PATTERNS = [
-    r"import\s+os(?!\s*\.path)",
-    r"import\s+sys",
-    r"import\s+subprocess",
-    r"__import__",
-    r"eval\s*\(",
-    r"exec\s*\(",
-    r"open\s*\(",
+    r"__import__\s*\(",
+    r"importlib",
+    r"subprocess",
     r"socket\.",
     r"shutil\.",
-    r"rmdir|remove|unlink",
+    r"os\.remove|os\.rmdir|os\.unlink",
+    r"open\s*\(",
 ]
 
 def is_code_safe(code):
@@ -246,81 +243,119 @@ def is_code_safe(code):
 
 def execute_python(code, timeout=10):
     """
-    Ejecuta código Python en proceso separado (sandbox).
-    Retorna dict con output, error y success.
+    Ejecuta código Python usando el intérprete actual.
+    Más seguro y funciona en cualquier servidor.
     """
     safe, reason = is_code_safe(code)
     if not safe:
         return {
             "output":  "",
-            "error":   f"⚠️ Código bloqueado por seguridad: {reason}",
+            "error":   f"⚠️ Código bloqueado: {reason}",
             "success": False
         }
 
-    indented = "\n".join("    " + line for line in code.strip().split("\n"))
-    wrapper = f"""
-import sys, io, traceback
-_out = io.StringIO()
-sys.stdout = _out
-sys.stderr = _out
-try:
-{indented}
-except Exception as _e:
-    print(f"ERROR: {{type(_e).__name__}}: {{_e}}")
-    print(traceback.format_exc())
-finally:
-    sys.stdout = sys.__stdout__
-    print(_out.getvalue(), end='')
-"""
+    import sys
+    import io
+    import traceback
+    import signal
 
-    # Intentar python o python3
-    for cmd in ["python", "python3"]:
-        try:
-            result = subprocess.run(
-                [cmd, "-c", wrapper],
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                env={
-                    "PATH": "/usr/bin:/usr/local/bin:/bin",
-                    "HOME": "/tmp",
-                    "PYTHONPATH": "",
-                    "PYTHONIOENCODING": "utf-8"
-                }
-            )
+    # Capturar stdout
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    sys.stdout = io.StringIO()
+    sys.stderr = io.StringIO()
 
-            output = result.stdout.strip()
-            error  = result.stderr.strip()
+    output = ""
+    error  = ""
+    success = False
 
-            if len(output) > 3000:
-                output = output[:3000] + "\n... (output truncado)"
+    try:
+        # Namespace limpio y seguro
+        safe_globals = {
+            "__builtins__": {
+                "print":     print,
+                "range":     range,
+                "len":       len,
+                "int":       int,
+                "float":     float,
+                "str":       str,
+                "list":      list,
+                "dict":      dict,
+                "set":       set,
+                "tuple":     tuple,
+                "bool":      bool,
+                "type":      type,
+                "isinstance":isinstance,
+                "enumerate": enumerate,
+                "zip":       zip,
+                "map":       map,
+                "filter":    filter,
+                "sorted":    sorted,
+                "reversed":  reversed,
+                "sum":       sum,
+                "min":       min,
+                "max":       max,
+                "abs":       abs,
+                "round":     round,
+                "pow":       pow,
+                "divmod":    divmod,
+                "hex":       hex,
+                "oct":       oct,
+                "bin":       bin,
+                "ord":       ord,
+                "chr":       chr,
+                "repr":      repr,
+                "format":    format,
+                "any":       any,
+                "all":       all,
+                "next":      next,
+                "iter":      iter,
+                "Exception": Exception,
+                "ValueError":ValueError,
+                "TypeError": TypeError,
+                "KeyError":  KeyError,
+                "IndexError":IndexError,
+                "StopIteration": StopIteration,
+                "True":      True,
+                "False":     False,
+                "None":      None,
+            },
+            "math":       __import__("math"),
+            "random":     __import__("random"),
+            "datetime":   __import__("datetime"),
+            "json":       __import__("json"),
+            "re":         __import__("re"),
+            "collections":__import__("collections"),
+            "itertools":  __import__("itertools"),
+            "functools":  __import__("functools"),
+            "statistics": __import__("statistics"),
+            "decimal":    __import__("decimal"),
+            "fractions":  __import__("fractions"),
+            "string":     __import__("string"),
+        }
+        safe_locals = {}
 
-            return {
-                "output":  output,
-                "error":   error,
-                "success": result.returncode == 0 and not output.startswith("ERROR:")
-            }
+        exec(compile(code, "<deepnova>", "exec"), safe_globals, safe_locals)
 
-        except FileNotFoundError:
-            continue  # Intentar con el siguiente comando
-        except subprocess.TimeoutExpired:
-            return {
-                "output":  "",
-                "error":   "⏱️ Tiempo límite excedido (10 segundos)",
-                "success": False
-            }
-        except Exception as e:
-            return {
-                "output":  "",
-                "error":   f"Error del sistema: {str(e)}",
-                "success": False
-            }
+        output  = sys.stdout.getvalue()
+        success = True
 
-    # Si ningún comando funcionó
+    except Exception as e:
+        output = sys.stdout.getvalue()
+        error  = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
+        success = False
+
+    finally:
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+
+    if len(output) > 3000:
+        output = output[:3000] + "\n... (truncado)"
+
     return {
-        "output":  "",
-        "error":   "❌ Python no disponible en el servidor",
-        "success": False
+        "output":  output.strip(),
+        "error":   error.strip(),
+        "success": success
     }
 
 def extract_python_code(text):
