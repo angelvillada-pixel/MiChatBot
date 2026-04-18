@@ -271,7 +271,7 @@ html,body{
   gap:16px;
   scroll-behavior:smooth;
   background:var(--bg);
-  min-height:0; /* CRÍTICO para flex */
+  min-height:0;
 }
 .msgs::-webkit-scrollbar{width:4px}
 .msgs::-webkit-scrollbar-thumb{background:rgba(99,102,241,0.25);border-radius:2px}
@@ -739,7 +739,7 @@ html,body{
         <div class="sres2" id="sr2el"></div>
       </div>
 
-      <!-- NUEVO PANEL: EJECUTAR PYTHON (agregado exactamente donde pediste) -->
+      <!-- NUEVO PANEL: EJECUTAR PYTHON -->
       <div class="psec">
         <div class="pt">⚡ Ejecutar Python</div>
         <textarea class="ata" id="codeExec"
@@ -1296,6 +1296,41 @@ function setTheme(el, name){
     document.body.classList.add(THEMES[name]);
   }
   toast(`🎨 Tema ${name||'Dark'} activado`);
+}
+
+// ==================== NUEVA FUNCIÓN: EJECUTAR PYTHON ====================
+async function runCode(){
+  const textarea = document.getElementById('codeExec');
+  const code = textarea.value.trim();
+  
+  if (!code) {
+    toast('⚠️ Escribe código Python primero');
+    return;
+  }
+
+  const resultDiv = document.getElementById('codeResult');
+  resultDiv.textContent = '⏳ Ejecutando en Python...';
+  resultDiv.classList.add('on');
+
+  try {
+    const res = await fetch(API + '/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code, session_id: sid })
+    });
+
+    const data = await res.json();
+
+    if (data.output !== undefined) {
+      resultDiv.innerHTML = `<pre style="margin:0; white-space:pre-wrap; font-family:Consolas,monospace; font-size:13px;">${esc(data.output)}</pre>`;
+    } else if (data.error) {
+      resultDiv.innerHTML = `<span style="color:var(--red)">❌ ${esc(data.error)}</span>`;
+    } else {
+      resultDiv.textContent = '✅ Ejecutado (sin salida)';
+    }
+  } catch (e) {
+    resultDiv.innerHTML = `<span style="color:var(--red)">⚠️ Error de conexión al ejecutar código</span>`;
+  }
 }
 </script>
 </body>
