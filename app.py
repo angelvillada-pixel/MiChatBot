@@ -18,11 +18,11 @@ def get_groq():
 
 # ── MODELOS ACTUALIZADOS 2025 ─────────────
 MODELS = {
-    "fast":   "llama-3.1-8b-instant",
-    "smart":  "llama-3.3-70b-versatile",
-    "reason": "deepseek-r1-distill-llama-70b",
-    "creative":"llama-3.1-70b-versatile",  # reemplaza mixtral
-    "vision": "llama-3.2-11b-vision-preview", # para imágenes
+    "fast":    "llama-3.1-8b-instant",
+    "smart":   "llama-3.3-70b-versatile",
+    "reason":  "llama-3.3-70b-versatile",   # reemplaza deepseek
+    "creative":"llama-3.1-8b-instant",       # reemplaza llama 1-70b
+    "vision":  "llama-3.2-11b-vision-preview",
 }
 
 # ── PERSONALIDAD NOVA 4.0 ─────────────────
