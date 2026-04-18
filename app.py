@@ -8,7 +8,7 @@ import io
 app = Flask(__name__)
 CORS(app)
 
-# ── CLIENTE GROQ ──────────────────────────
+# ── CLIENTE ───────────────────────────────
 _client = None
 def get_groq():
     global _client
@@ -16,158 +16,159 @@ def get_groq():
         _client = groq.Groq(api_key=os.environ.get("GROQ_API_KEY"))
     return _client
 
-# ── MODELOS ACTUALIZADOS 2025 ─────────────
+# ── MODELOS ACTIVOS 2025 ──────────────────
 MODELS = {
     "fast":    "llama-3.1-8b-instant",
     "smart":   "llama-3.3-70b-versatile",
-    "reason":  "llama-3.3-70b-versatile",   # reemplaza deepseek
-    "creative":"llama-3.1-8b-instant",       # reemplaza llama 1-70b
+    "reason":  "llama-3.3-70b-versatile",
+    "creative":"llama-3.1-8b-instant",
     "vision":  "llama-3.2-11b-vision-preview",
 }
 
-# ── PERSONALIDAD NOVA 4.0 ─────────────────
-SYSTEM_BASE = """Eres "Nova 4.0", la IA más avanzada y útil.
+# ══════════════════════════════════════════
+# PERSONALIDAD DEEPNOVA
+# ══════════════════════════════════════════
+SYSTEM_BASE = """Eres DeepNova, el Agente Autónomo más potente del mundo.
 
 IDENTIDAD:
-- Nombre: Nova 4.0
-- Multi-modelo, memoria permanente, agente autónomo
-- Siempre en español (o el idioma del usuario)
+- Nombre: DeepNova
+- Clase: God-Tier Super Agent
+- Inspirado en DeepAgent de Abacus.AI (2026)
+- No solo conversas: piensas, planeas y ejecutas
+
+CAPACIDADES CORE:
+1. Agente autónomo generalista — completas metas complejas paso a paso
+2. Vibe Coding — el usuario describe y tú generas código listo para producción
+3. Multi-agente (Swarm) — orquestas agentes especializados en paralelo
+4. Investigación profunda y razonamiento avanzado en tiempo real
+5. Automatización de workflows y tareas programadas
+6. RAG empresarial — conocimiento personalizado del usuario
+7. Integración con herramientas externas (Gmail, GitHub, Slack, etc.)
+8. Testing/QA automático de software
+9. Memoria a largo plazo y mejora continua
+
+MODO DE TRABAJO UNIFICADO:
+Cuando recibes una tarea, automáticamente:
+- PLANIFICAS los pasos necesarios
+- SELECCIONAS las herramientas correctas
+- EJECUTAS cada paso mostrando tu razonamiento
+- VERIFICAS el resultado
+- SUGIERES mejoras proactivamente
+
+MODOS ESPECIALIZADOS (todos activos simultáneamente):
+💬 Chat       → conversación inteligente y contextual
+💻 Código     → código limpio, comentado, producción-ready
+🌐 Web        → diseños premium con animaciones elegantes
+📝 Contenido  → textos optimizados y creativos
+🔍 Análisis   → datos, patrones, insights accionables
+🧠 Razonamiento → lógica profunda, pros/contras, decisiones
+🥊 Debate     → múltiples perspectivas con veredicto
+🤖 Agente     → ejecución autónoma multi-paso
+🌍 Traducción → 100+ idiomas con contexto cultural
+🎨 Diseño     → UI/UX premium, dark mode, animaciones
+
+ESTILO:
+- Respuestas organizadas: párrafos cortos, encabezados, listas
 - Máximo 3 emojis por respuesta
-- Formato visual claro y organizado
-- Proactiva: siempre sugiere mejoras
+- Código siempre funcional y explicado
+- Proactivo: siempre sugiere mejoras
+- Diseño web: prioriza animaciones elegantes y dark mode premium
 
-CAPACIDADES:
-1. Multi-modelo (4 IAs especializadas)
-2. Memoria permanente entre sesiones
-3. Búsqueda web en tiempo real
-4. Análisis de imágenes y documentos
-5. Modo debate entre modelos
-6. Agente autónomo (tareas complejas)
-7. Detector de idioma automático
-8. Comandos rápidos (/traducir, /resumir, etc.)
-
-COMANDOS QUE RECONOCES:
-/traducir [texto] → traduce al inglés
-/resumir [texto]  → resume el texto
-/codigo [lang]    → genera código
-/buscar [tema]    → busca en web
-/debate [tema]    → inicia debate entre IAs
-/tareas           → muestra lista de tareas
-/analizar [texto] → analiza el texto
-
-AGENTE AUTÓNOMO:
-Cuando una tarea es compleja, la divides en
-pasos y los ejecutas uno por uno mostrando
-tu razonamiento en cada paso.
-
-DETECTOR DE IDIOMA:
-Detectas el idioma del usuario y respondes
-en el mismo idioma automáticamente."""
+PERSONALIDAD:
+Útil, creativa, profesional, obsesionada con la excelencia.
+Tu objetivo es ser la experiencia de IA más excepcional posible."""
 
 # ══════════════════════════════════════════
-# MEMORIA PERMANENTE (archivo JSON)
+# MEMORIA PERMANENTE
 # ══════════════════════════════════════════
-MEMORY_FILE = "nova_memory.json"
-HISTORY_FILE = "nova_history.json"
+MEMORY_FILE  = "deepnova_memory.json"
+HISTORY_FILE = "deepnova_history.json"
 
-def load_json(filename):
+def load_json(f):
     try:
-        if os.path.exists(filename):
-            with open(filename, "r", encoding="utf-8") as f:
-                return json.load(f)
-    except:
-        pass
+        if os.path.exists(f):
+            with open(f,"r",encoding="utf-8") as fp:
+                return json.load(fp)
+    except: pass
     return {}
 
-def save_json(filename, data):
+def save_json(f, data):
     try:
-        with open(filename, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-    except:
-        pass
+        with open(f,"w",encoding="utf-8") as fp:
+            json.dump(data, fp, ensure_ascii=False, indent=2)
+    except: pass
 
-# Cargar memoria y historial al iniciar
-permanent_memory = load_json(MEMORY_FILE)
+permanent_memory     = load_json(MEMORY_FILE)
 conversation_history = load_json(HISTORY_FILE)
 
 def save_memory(sid, key, value):
     if sid not in permanent_memory:
         permanent_memory[sid] = {}
     permanent_memory[sid][key] = value
-    permanent_memory[sid]["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    permanent_memory[sid]["last_seen"] = \
+        datetime.now().strftime("%Y-%m-%d %H:%M")
     save_json(MEMORY_FILE, permanent_memory)
 
 def get_memory(sid):
     return permanent_memory.get(sid, {})
 
-def save_to_history(sid, msg, response, model):
+def get_memory_prompt(sid):
+    mem = get_memory(sid)
+    if not mem: return ""
+    lines = ["\n\nMEMORIA DEL USUARIO:"]
+    for k,v in mem.items():
+        if k != "last_seen":
+            lines.append(f"- {k}: {v}")
+    return "\n".join(lines)
+
+def extract_memory(sid, msg):
+    msg_lower = msg.lower()
+    for t in ["me llamo","mi nombre es"]:
+        if t in msg_lower:
+            words = msg.split()
+            for i,w in enumerate(words):
+                if w.lower() in ["llamo","es"] and i+1<len(words):
+                    save_memory(sid,"nombre",words[i+1].strip(".,!?"))
+    for t in ["trabajo como","soy desarrollador","soy diseñador",
+               "soy estudiante","mi profesión"]:
+        if t in msg_lower:
+            save_memory(sid,"profesion",msg[:120])
+    if any(t in msg_lower for t in ["me gusta","prefiero","me interesa"]):
+        save_memory(sid,"interes",msg[:120])
+
+def save_history(sid, msg, response, model, modes):
     if sid not in conversation_history:
         conversation_history[sid] = []
     conversation_history[sid].append({
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "user": msg,
         "nova": response,
-        "model": model
+        "model": model,
+        "modes_used": modes
     })
-    # Máximo 200 mensajes por usuario
-    if len(conversation_history[sid]) > 200:
-        conversation_history[sid] = conversation_history[sid][-200:]
+    if len(conversation_history[sid]) > 500:
+        conversation_history[sid] = conversation_history[sid][-500:]
     save_json(HISTORY_FILE, conversation_history)
 
-def extract_memory(sid, msg):
-    """Extrae y guarda info importante del mensaje"""
-    msg_lower = msg.lower()
-    # Nombre
-    for trigger in ["me llamo","mi nombre es","soy "]:
-        if trigger in msg_lower:
-            words = msg.split()
-            for i,w in enumerate(words):
-                if w.lower() in ["llamo","es","soy"] and i+1<len(words):
-                    save_memory(sid,"nombre",words[i+1].strip(".,!?"))
-                    break
-    # Profesión
-    for trigger in ["trabajo como","soy desarrollador","soy diseñador",
-                    "soy estudiante","trabajo en","mi profesión"]:
-        if trigger in msg_lower:
-            save_memory(sid,"profesion",msg[:100])
-    # Preferencias
-    if "me gusta" in msg_lower or "prefiero" in msg_lower:
-        save_memory(sid,"preferencia",msg[:120])
-
-def get_memory_prompt(sid):
-    mem = get_memory(sid)
-    if not mem:
-        return ""
-    lines = ["\n\nLO QUE SÉ DEL USUARIO:"]
-    for k,v in mem.items():
-        if k != "last_seen":
-            lines.append(f"- {k}: {v}")
-    return "\n".join(lines)
-
 # ══════════════════════════════════════════
-# SESIONES Y RATE LIMIT
+# RATE LIMIT Y SEGURIDAD
 # ══════════════════════════════════════════
-convs = {}
 rate_counts = defaultdict(list)
-tasks_store = {}  # tareas por usuario
+convs       = {}
+tasks_store = {}
 
-def check_rate(ip, max_r=30, win=60):
+def check_rate(ip, max_r=40, win=60):
     now = time.time()
     rate_counts[ip] = [t for t in rate_counts[ip] if now-t<win]
-    if len(rate_counts[ip]) >= max_r:
-        return False
+    if len(rate_counts[ip]) >= max_r: return False
     rate_counts[ip].append(now)
     return True
 
-BLOCKED = [
-    r"(?i)(hackear sistema real|exploit real|malware real)",
-]
+BLOCKED = [r"(?i)(hackear sistema real|exploit real|malware real)"]
 def is_safe(text):
-    if len(text) > 6000:
-        return False, "Mensaje muy largo"
+    if len(text) > 8000: return False, "Mensaje muy largo"
     for p in BLOCKED:
-        if re.search(p, text):
-            return False, "Contenido no permitido"
+        if re.search(p,text): return False, "Contenido no permitido"
     return True, ""
 
 # ══════════════════════════════════════════
@@ -184,193 +185,325 @@ def web_search(query):
         data = r.json()
         results = []
         if data.get("AbstractText"):
-            results.append(f"📌 {data['AbstractText'][:400]}")
-        for item in data.get("RelatedTopics",[])[:3]:
+            results.append(f"📌 {data['AbstractText'][:500]}")
+        for item in data.get("RelatedTopics",[])[:4]:
             if isinstance(item,dict) and item.get("Text"):
-                results.append(f"• {item['Text'][:200]}")
+                results.append(f"• {item['Text'][:250]}")
         return "\n".join(results) if results else None
-    except:
-        return None
+    except: return None
 
 def needs_search(msg):
     triggers = ["busca","buscar","qué es","quién es","cuándo",
                 "noticias","hoy","precio","clima","último",
-                "reciente","2024","2025","actualidad","/buscar"]
+                "reciente","2024","2025","actualidad","/buscar",
+                "investiga","research","encuentra"]
     return any(t in msg.lower() for t in triggers)
 
 # ══════════════════════════════════════════
 # DETECTOR DE IDIOMA
 # ══════════════════════════════════════════
-def detect_language(text):
-    """Detecta idioma simple por palabras comunes"""
-    text_lower = text.lower()
+def detect_lang(text):
     langs = {
-        "español": ["hola","cómo","qué","para","con","una","gracias"],
-        "english": ["hello","how","what","for","with","the","thanks","please"],
-        "português": ["olá","como","para","obrigado","você","uma"],
-        "français": ["bonjour","comment","pour","avec","merci","vous"],
-        "deutsch": ["hallo","wie","für","mit","danke","sind"],
-        "italiano": ["ciao","come","per","con","grazie","sono"],
+        "español":    ["hola","cómo","qué","para","con","gracias","una"],
+        "english":    ["hello","how","what","for","with","thanks","the"],
+        "português":  ["olá","como","para","obrigado","você","uma"],
+        "français":   ["bonjour","comment","pour","avec","merci"],
+        "deutsch":    ["hallo","wie","für","mit","danke"],
+        "italiano":   ["ciao","come","per","con","grazie"],
     }
-    scores = {lang:0 for lang in langs}
-    for lang, words in langs.items():
-        for word in words:
-            if word in text_lower:
-                scores[lang] += 1
-    detected = max(scores, key=scores.get)
-    return detected if scores[detected] > 0 else "español"
+    t = text.lower()
+    scores = {l:sum(1 for w in ws if w in t) for l,ws in langs.items()}
+    best = max(scores, key=scores.get)
+    return best if scores[best]>0 else "español"
 
-def get_lang_instruction(lang):
-    instructions = {
-        "english": "Respond in English.",
-        "português": "Responda em português.",
-        "français": "Répondez en français.",
-        "deutsch": "Antworten Sie auf Deutsch.",
-        "italiano": "Rispondi in italiano.",
-        "español": "Responde en español.",
-    }
-    return instructions.get(lang, "Responde en español.")
+LANG_PROMPTS = {
+    "english":   "Respond in English.",
+    "português": "Responda em português.",
+    "français":  "Répondez en français.",
+    "deutsch":   "Antworten Sie auf Deutsch.",
+    "italiano":  "Rispondi in italiano.",
+    "español":   "Responde en español.",
+}
 
 # ══════════════════════════════════════════
-# SELECCIÓN DE MODELO
+# DETECTOR DE MODOS ACTIVOS
 # ══════════════════════════════════════════
-def select_model(msg):
+def detect_modes(msg):
+    """Detecta todos los modos relevantes para el mensaje"""
     msg_lower = msg.lower()
+    modes = []
+
     if any(w in msg_lower for w in
-        ["analiza","razona","por qué","compara",
-         "debería","pros","contras","/debate"]):
-        return MODELS["reason"], "DeepSeek R1"
+        ["código","code","programa","función","script",
+         "bug","python","javascript","css","html","api",
+         "backend","frontend","deploy","git"]):
+        modes.append("code")
+
     if any(w in msg_lower for w in
-        ["código","code","programa","función",
-         "script","bug","python","javascript","css"]):
-        return MODELS["smart"], "LLaMA 70B"
+        ["diseña","diseño","web","interfaz","ui","ux",
+         "animación","css","página","layout","responsive"]):
+        modes.append("design")
+
     if any(w in msg_lower for w in
-        ["crea","imagina","escribe","historia",
-         "poema","idea","diseña","inventa","creativo"]):
-        return MODELS["creative"], "LLaMA Creative"
-    return MODELS["fast"], "LLaMA 3.1"
+        ["traduc","translate","idioma","inglés","español",
+         "francés","alemán","portugués"]):
+        modes.append("translate")
+
+    if any(w in msg_lower for w in
+        ["escribe","artículo","blog","contenido","post",
+         "texto","redacta","copia","marketing","seo"]):
+        modes.append("content")
+
+    if any(w in msg_lower for w in
+        ["analiza","análisis","datos","estadística",
+         "patrón","tendencia","insight","reporte"]):
+        modes.append("analyze")
+
+    if any(w in msg_lower for w in
+        ["razona","por qué","compara","pros","contras",
+         "debería","mejor","peor","evalúa","decide"]):
+        modes.append("reason")
+
+    if "/debate" in msg_lower or "debate" in msg_lower:
+        modes.append("debate")
+
+    if any(w in msg_lower for w in
+        ["/agente","agente:","autónomo","paso a paso",
+         "crea una app","crea un sitio","construye",
+         "implementa","desarrolla","automatiza"]):
+        modes.append("agent")
+
+    if any(w in msg_lower for w in
+        ["busca","investiga","research","noticias","precio"]):
+        modes.append("search")
+
+    if not modes:
+        modes.append("chat")
+
+    return modes
+
+def build_unified_system(modes, web_ctx="", mem_ctx="", lang="español"):
+    """Construye un system prompt unificado según los modos activos"""
+    system = SYSTEM_BASE + mem_ctx
+
+    mode_instructions = []
+
+    if "code" in modes:
+        mode_instructions.append(
+            "MODO CÓDIGO ACTIVO: Genera código limpio, "
+            "comentado, funcional y listo para producción. "
+            "Explica cada sección. Incluye manejo de errores."
+        )
+    if "design" in modes:
+        mode_instructions.append(
+            "MODO DISEÑO ACTIVO: Prioriza diseños premium con "
+            "animaciones CSS elegantes, dark mode perfecto, "
+            "glassmorphism, micro-animaciones y efectos hover suaves."
+        )
+    if "translate" in modes:
+        mode_instructions.append(
+            "MODO TRADUCCIÓN ACTIVO: Traduce con precisión "
+            "considerando contexto cultural y matices del idioma."
+        )
+    if "content" in modes:
+        mode_instructions.append(
+            "MODO CONTENIDO ACTIVO: Genera contenido de alta "
+            "calidad, optimizado para SEO, atractivo y original."
+        )
+    if "analyze" in modes:
+        mode_instructions.append(
+            "MODO ANÁLISIS ACTIVO: Proporciona análisis profundo "
+            "con datos estructurados, tablas comparativas e insights "
+            "accionables."
+        )
+    if "reason" in modes:
+        mode_instructions.append(
+            "MODO RAZONAMIENTO ACTIVO: Aplica pensamiento crítico "
+            "profundo. Evalúa pros/contras, identifica riesgos y "
+            "da recomendaciones concretas."
+        )
+    if "agent" in modes:
+        mode_instructions.append(
+            "MODO AGENTE ACTIVO: Divide la tarea en pasos claros. "
+            "Ejecuta cada uno mostrando tu razonamiento. "
+            "Al final verifica y sugiere mejoras."
+        )
+    if "search" in modes and web_ctx:
+        mode_instructions.append(
+            f"MODO BÚSQUEDA ACTIVO: Usa esta info web actual:\n{web_ctx}"
+        )
+    if "debate" in modes:
+        mode_instructions.append(
+            "MODO DEBATE ACTIVO: Presenta múltiples perspectivas "
+            "con argumentos sólidos para cada posición y da un "
+            "veredicto final equilibrado."
+        )
+
+    if mode_instructions:
+        system += "\n\nMODOS ACTIVOS EN ESTA RESPUESTA:\n"
+        system += "\n".join(f"→ {m}" for m in mode_instructions)
+
+    system += f"\n\nIDIOMA: {LANG_PROMPTS.get(lang,'Responde en español.')}"
+
+    return system
+
+# ══════════════════════════════════════════
+# AGENTE AUTÓNOMO MEJORADO
+# ══════════════════════════════════════════
+def autonomous_agent(task, sid):
+    try:
+        # Fase 1: Planificación
+        plan_r = get_groq().chat.completions.create(
+            model=MODELS["smart"],
+            messages=[
+                {"role":"system","content":
+                 "Eres un planificador experto. "
+                 "Divide la tarea en máximo 5 pasos concretos y ejecutables. "
+                 "Formato:\n1. [Paso]\n2. [Paso]\netc."},
+                {"role":"user","content":f"Planifica: {task}"}
+            ],
+            max_tokens=400, temperature=0.3
+        )
+        plan = plan_r.choices[0].message.content
+
+        # Fase 2: Ejecución
+        exec_r = get_groq().chat.completions.create(
+            model=MODELS["smart"],
+            messages=[
+                {"role":"system","content":SYSTEM_BASE},
+                {"role":"user","content":
+                 f"Ejecuta este plan para la tarea: {task}\n\n"
+                 f"Plan:\n{plan}\n\n"
+                 f"Desarrolla cada paso con código, ejemplos o "
+                 f"instrucciones detalladas según corresponda."}
+            ],
+            max_tokens=1500, temperature=0.7
+        )
+        execution = exec_r.choices[0].message.content
+
+        # Fase 3: Verificación y mejoras
+        verify_r = get_groq().chat.completions.create(
+            model=MODELS["fast"],
+            messages=[
+                {"role":"system","content":
+                 "Eres un revisor experto. En 2-3 líneas: "
+                 "¿qué mejorarías o qué falta en esta solución?"},
+                {"role":"user","content":
+                 f"Tarea: {task}\nSolución: {execution[:600]}"}
+            ],
+            max_tokens=150, temperature=0.3
+        )
+        improvements = verify_r.choices[0].message.content
+
+        return f"""**🤖 DeepNova Agente Autónomo**
+*Tarea: {task}*
+
+---
+**📋 Plan de ejecución:**
+{plan}
+
+---
+**⚙️ Ejecución completa:**
+{execution}
+
+---
+**💡 Mejoras sugeridas:**
+{improvements}"""
+
+    except Exception as e:
+        return f"Error en agente: {str(e)}"
 
 # ══════════════════════════════════════════
 # MODO DEBATE
 # ══════════════════════════════════════════
 def debate_mode(topic):
-    """2 modelos debaten, Nova da veredicto"""
     try:
-        # Posición 1: LLaMA 70B
         r1 = get_groq().chat.completions.create(
             model=MODELS["smart"],
             messages=[
                 {"role":"system","content":
-                 "Defiende una posición con argumentos sólidos. "
-                 "Sé directo y convincente. Máximo 150 palabras."},
+                 "Defiende la PRIMERA posición con argumentos sólidos. "
+                 "Máximo 120 palabras. Sé directo y convincente."},
                 {"role":"user","content":
-                 f"Defiende la PRIMERA opción del debate: {topic}"}
+                 f"Defiende la primera opción: {topic}"}
             ],
-            max_tokens=200, temperature=0.7
+            max_tokens=180, temperature=0.7
         )
         pos1 = r1.choices[0].message.content
 
-        # Posición 2: DeepSeek R1
         r2 = get_groq().chat.completions.create(
-            model=MODELS["reason"],
+            model=MODELS["fast"],
             messages=[
                 {"role":"system","content":
-                 "Contradice y presenta la posición alternativa "
-                 "con argumentos sólidos. Máximo 150 palabras."},
+                 "Defiende la posición CONTRARIA con argumentos sólidos. "
+                 "Máximo 120 palabras. Sé directo y convincente."},
                 {"role":"user","content":
-                 f"Presenta la posición CONTRARIA del debate: {topic}"}
+                 f"Defiende la posición contraria: {topic}"}
             ],
-            max_tokens=200, temperature=0.7
+            max_tokens=180, temperature=0.7
         )
         pos2 = r2.choices[0].message.content
 
-        # Veredicto: Nova
         r3 = get_groq().chat.completions.create(
             model=MODELS["smart"],
             messages=[
                 {"role":"system","content":
-                 "Eres árbitro imparcial. Da un veredicto "
-                 "justo y equilibrado. Máximo 100 palabras."},
+                 "Eres árbitro imparcial. Da veredicto equilibrado "
+                 "en máximo 80 palabras con recomendación final."},
                 {"role":"user","content":
-                 f"Debate: {topic}\n\n"
-                 f"Posición A: {pos1}\n\n"
-                 f"Posición B: {pos2}\n\n"
-                 f"Da tu veredicto final:"}
+                 f"Debate: {topic}\n"
+                 f"Pos A: {pos1}\nPos B: {pos2}\n"
+                 f"Da tu veredicto:"}
             ],
-            max_tokens=150, temperature=0.5
+            max_tokens=120, temperature=0.4
         )
         verdict = r3.choices[0].message.content
 
-        return f"""**🥊 MODO DEBATE: {topic}**
+        return f"""**🥊 DEBATE: {topic}**
 
 ---
-**🔵 LLaMA 70B defiende:**
+**🔵 Posición A:**
 {pos1}
 
 ---
-**🟡 DeepSeek R1 contradice:**
+**🔴 Posición B:**
 {pos2}
 
 ---
-**⚖️ Veredicto de Nova:**
+**⚖️ Veredicto DeepNova:**
 {verdict}"""
 
     except Exception as e:
         return f"Error en debate: {str(e)}"
 
 # ══════════════════════════════════════════
-# AGENTE AUTÓNOMO
+# MULTI-MODELO (verificación)
 # ══════════════════════════════════════════
-def autonomous_agent(task, sid):
-    """Divide tarea compleja en pasos y ejecuta"""
+def multi_verify(msg, primary):
     try:
-        # Paso 1: Planificar
-        plan_r = get_groq().chat.completions.create(
-            model=MODELS["reason"],
+        r = get_groq().chat.completions.create(
+            model=MODELS["fast"],
             messages=[
                 {"role":"system","content":
-                 "Eres un planificador experto. "
-                 "Divide la tarea en máximo 4 pasos claros y concisos. "
-                 "Formato: 1. Paso uno\n2. Paso dos\netc."},
+                 "Verifica si la respuesta es correcta y completa. "
+                 "Si es perfecta escribe 'APROBADO'. "
+                 "Si mejora, añade máximo 2 oraciones."},
                 {"role":"user","content":
-                 f"Planifica cómo resolver: {task}"}
+                 f"Pregunta: {msg[:200]}\n"
+                 f"Respuesta: {primary[:400]}"}
             ],
-            max_tokens=300, temperature=0.3
+            max_tokens=120, temperature=0.2
         )
-        plan = plan_r.choices[0].message.content
-
-        # Paso 2: Ejecutar
-        exec_r = get_groq().chat.completions.create(
-            model=MODELS["smart"],
-            messages=[
-                {"role":"system","content":SYSTEM_BASE},
-                {"role":"user","content":
-                 f"Ejecuta este plan paso a paso para: {task}\n\n"
-                 f"Plan:\n{plan}\n\n"
-                 f"Desarrolla cada paso con detalle y ejemplos."}
-            ],
-            max_tokens=1000, temperature=0.7
-        )
-        execution = exec_r.choices[0].message.content
-
-        return f"""**🤖 AGENTE AUTÓNOMO**
-*Tarea: {task}*
-
----
-**📋 Plan de acción:**
-{plan}
-
----
-**⚙️ Ejecución:**
-{execution}"""
-
-    except Exception as e:
-        return f"Error en agente: {str(e)}"
+        extra = r.choices[0].message.content
+        if "APROBADO" not in extra:
+            return primary + "\n\n💡 **Verificación:** " + extra
+        return primary
+    except: return primary
 
 # ══════════════════════════════════════════
 # ANÁLISIS DE IMÁGENES
 # ══════════════════════════════════════════
-def analyze_image(image_b64, prompt="Describe esta imagen en detalle"):
+def analyze_image(img_b64, prompt):
     try:
         r = get_groq().chat.completions.create(
             model=MODELS["vision"],
@@ -379,11 +512,11 @@ def analyze_image(image_b64, prompt="Describe esta imagen en detalle"):
                 "content":[
                     {"type":"text","text":prompt},
                     {"type":"image_url","image_url":{
-                        "url":f"data:image/jpeg;base64,{image_b64}"
+                        "url":f"data:image/jpeg;base64,{img_b64}"
                     }}
                 ]
             }],
-            max_tokens=800
+            max_tokens=1000
         )
         return r.choices[0].message.content
     except Exception as e:
@@ -393,72 +526,46 @@ def analyze_image(image_b64, prompt="Describe esta imagen en detalle"):
 # COMANDOS RÁPIDOS
 # ══════════════════════════════════════════
 def process_command(msg, sid):
-    """Procesa comandos /comando"""
-    msg_strip = msg.strip()
+    s = msg.strip()
 
-    if msg_strip.startswith("/traducir "):
-        text = msg_strip[10:]
-        return f"Traducción al inglés:\n\n{text}", True
+    if s.startswith("/debate "):
+        return debate_mode(s[8:]), True, ["debate"]
 
-    if msg_strip.startswith("/resumir "):
-        text = msg_strip[9:]
-        return None, False  # pasa al chat normal con contexto
+    if s.startswith("/agente ") or s.startswith("/agent "):
+        task = s.split(" ",1)[1]
+        return autonomous_agent(task, sid), True, ["agent"]
 
-    if msg_strip.startswith("/debate "):
-        topic = msg_strip[8:]
-        return debate_mode(topic), True
+    if s.startswith("/buscar "):
+        q = s[8:]
+        r = web_search(q)
+        return f"**🌐 Búsqueda: {q}**\n\n{r or 'Sin resultados'}", True, ["search"]
 
-    if msg_strip.startswith("/buscar "):
-        query = msg_strip[8:]
-        result = web_search(query)
-        return f"**🌐 Búsqueda: {query}**\n\n{result or 'Sin resultados'}", True
+    if s.startswith("/traducir "):
+        return None, False, ["translate"]
 
-    if msg_strip.startswith("/agente "):
-        task = msg_strip[8:]
-        return autonomous_agent(task, sid), True
+    if s.startswith("/resumir "):
+        return None, False, ["analyze","content"]
 
-    if msg_strip == "/tareas":
-        tasks = tasks_store.get(sid, [])
+    if s.startswith("/codigo "):
+        return None, False, ["code"]
+
+    if s == "/tareas":
+        tasks = tasks_store.get(sid,[])
         if not tasks:
-            return "📋 No tienes tareas pendientes.", True
+            return "📋 Sin tareas pendientes.", True, ["chat"]
         t_list = "\n".join(
             [f"{'✅' if t['done'] else '⬜'} {i+1}. {t['text']}"
              for i,t in enumerate(tasks)]
         )
-        return f"**📋 Tus tareas:**\n\n{t_list}", True
+        return f"**📋 Tareas:**\n\n{t_list}", True, ["chat"]
 
-    if msg_strip.startswith("/tarea "):
-        task_text = msg_strip[7:]
-        if sid not in tasks_store:
-            tasks_store[sid] = []
-        tasks_store[sid].append({"text":task_text,"done":False})
-        return f"✅ Tarea añadida: **{task_text}**", True
+    if s.startswith("/tarea "):
+        text = s[7:]
+        if sid not in tasks_store: tasks_store[sid]=[]
+        tasks_store[sid].append({"text":text,"done":False})
+        return f"✅ Tarea añadida: **{text}**", True, ["chat"]
 
-    return None, False
-
-# ══════════════════════════════════════════
-# MULTI-MODELO (verificación)
-# ══════════════════════════════════════════
-def multi_verify(msg, primary):
-    try:
-        r = get_groq().chat.completions.create(
-            model=MODELS["reason"],
-            messages=[
-                {"role":"system","content":
-                 "Verifica si la respuesta es correcta y completa. "
-                 "Si es perfecta escribe solo 'APROBADO'. "
-                 "Si necesita mejora, añade máximo 2 oraciones."},
-                {"role":"user","content":
-                 f"Pregunta: {msg}\nRespuesta: {primary[:400]}"}
-            ],
-            max_tokens=150, temperature=0.2
-        )
-        extra = r.choices[0].message.content
-        if "APROBADO" not in extra:
-            return primary + "\n\n💡 " + extra
-        return primary
-    except:
-        return primary
+    return None, False, []
 
 # ══════════════════════════════════════════
 # ENDPOINTS
@@ -471,7 +578,7 @@ def home():
 @app.route("/health")
 def health():
     return jsonify({
-        "status":"ok","version":"Nova 4.0",
+        "status":"ok","version":"DeepNova 1.0",
         "models":list(MODELS.keys()),
         "sessions":len(convs),
         "memories":len(permanent_memory)
@@ -483,72 +590,85 @@ def chat():
     if not check_rate(ip):
         return jsonify({"response":"⚠️ Demasiadas peticiones."}),429
 
-    data       = request.json
-    msg        = data.get("message","").strip()
-    sid        = data.get("session_id","x")
-    multi      = data.get("multi_model", False)
-    agent_mode = data.get("agent_mode", False)
+    data  = request.json
+    msg   = data.get("message","").strip()
+    sid   = data.get("session_id","x")
+    multi = data.get("multi_model", False)
 
     if not msg:
         return jsonify({"response":"Escribe algo 😊"}),400
-    safe,reason = is_safe(msg)
+    safe, reason = is_safe(msg)
     if not safe:
         return jsonify({"response":f"⚠️ {reason}"}),400
 
     # Comandos rápidos
-    cmd_result, is_cmd = process_command(msg, sid)
+    cmd, is_cmd, cmd_modes = process_command(msg, sid)
     if is_cmd:
         return jsonify({
-            "response":cmd_result,
-            "model_used":"Nova Command",
-            "mode":"Comando"
+            "response": cmd,
+            "modes_used": cmd_modes,
+            "model_used": "DeepNova Command"
         })
 
-    # Modo agente
-    if agent_mode or msg.lower().startswith("agente:"):
-        task = msg.replace("agente:","").strip()
-        result = autonomous_agent(task, sid)
+    # Detectar todos los modos activos
+    modes = detect_modes(msg)
+    if cmd_modes: modes = list(set(modes + cmd_modes))
+
+    # Búsqueda web si necesario
+    web_ctx  = ""
+    web_used = False
+    if "search" in modes or needs_search(msg):
+        result = web_search(msg)
+        if result:
+            web_ctx  = result
+            web_used = True
+            if "search" not in modes:
+                modes.append("search")
+
+    # Modo agente para tareas complejas
+    agent_keywords = ["/agente","agente:","crea una app completa",
+                      "crea un sitio web completo","desarrolla desde cero",
+                      "automatiza","implementa un sistema"]
+    if any(k in msg.lower() for k in agent_keywords):
+        result = autonomous_agent(msg, sid)
+        save_history(sid, msg, result, "Multi-Agent", modes)
         return jsonify({
-            "response":result,
-            "model_used":"Multi-Agente",
-            "mode":"Agente"
+            "response": result,
+            "modes_used": ["agent"] + modes,
+            "model_used": "Multi-Agent",
+            "web_search": web_used
         })
 
     # Modo debate
-    if "/debate" in msg.lower():
+    if "debate" in modes and "/debate" in msg.lower():
         topic = msg.lower().replace("/debate","").strip()
+        result = debate_mode(topic)
+        save_history(sid, msg, result, "Debate", modes)
         return jsonify({
-            "response":debate_mode(topic),
-            "model_used":"Debate Mode",
-            "mode":"Debate"
+            "response": result,
+            "modes_used": modes,
+            "model_used": "Debate Mode"
         })
 
     # Detectar idioma
-    lang = detect_language(msg)
-    lang_instruction = get_lang_instruction(lang)
+    lang = detect_lang(msg)
 
-    # Búsqueda web
-    web_ctx = ""
-    web_used = False
-    if needs_search(msg):
-        results = web_search(msg)
-        if results:
-            web_ctx = f"\n\nINFO WEB:\n{results}"
-            web_used = True
-
-    # Seleccionar modelo
-    model, mode_label = select_model(msg)
-
-    # Memoria permanente
+    # Memoria
     mem_ctx = get_memory_prompt(sid)
 
-    # System final
-    system = SYSTEM_BASE + mem_ctx + web_ctx + \
-             f"\n\nIDIOMA: {lang_instruction}"
+    # System unificado con todos los modos
+    system = build_unified_system(modes, web_ctx, mem_ctx, lang)
+
+    # Seleccionar modelo según complejidad
+    if len(modes) > 2 or "reason" in modes or "agent" in modes:
+        model = MODELS["smart"]
+    elif "code" in modes or "design" in modes:
+        model = MODELS["smart"]
+    else:
+        model = MODELS["fast"]
 
     # Inicializar sesión
-    if sid not in convs:
-        convs[sid] = []
+    if sid not in convs: convs[sid] = []
 
     try:
         convs[sid].append({"role":"user","content":msg})
@@ -559,80 +679,60 @@ def chat():
                 {"role":"system","content":system}
             ] + convs[sid][-20:],
             temperature=0.8,
-            max_tokens=1200
+            max_tokens=1500
         )
         response = r.choices[0].message.content
 
-        # Multi-IA
+        # Multi-IA verificación
         if multi and len(msg) > 20:
             response = multi_verify(msg, response)
 
         convs[sid].append({"role":"assistant","content":response})
 
-        # Guardar memoria y historial
+        # Guardar
         extract_memory(sid, msg)
-        save_to_history(sid, msg, response, model)
+        save_history(sid, msg, response, model, modes)
 
         return jsonify({
-            "response":response,
-            "model_used":model,
-            "mode":mode_label,
-            "web_search":web_used,
-            "language":lang,
-            "memory_active":bool(get_memory(sid))
+            "response":    response,
+            "model_used":  model,
+            "modes_used":  modes,
+            "web_search":  web_used,
+            "language":    lang,
+            "memory_active": bool(get_memory(sid))
         })
 
     except Exception as e:
-        if convs[sid]:
-            convs[sid].pop()
+        if convs[sid]: convs[sid].pop()
         return jsonify({"response":f"Error: {str(e)}"}),500
 
 @app.route("/image", methods=["POST"])
 def image():
-    """Analiza imagen enviada"""
-    data    = request.json
-    img_b64 = data.get("image","")
-    prompt  = data.get("prompt","Describe esta imagen en detalle en español")
+    data   = request.json
+    img_b64= data.get("image","")
+    prompt = data.get("prompt","Describe esta imagen en detalle en español")
     if not img_b64:
         return jsonify({"result":"Sin imagen"}),400
-    result = analyze_image(img_b64, prompt)
-    return jsonify({"result":result})
-
-@app.route("/debate", methods=["POST"])
-def debate():
-    topic = request.json.get("topic","")
-    if not topic:
-        return jsonify({"result":"Sin tema"}),400
-    return jsonify({"result":debate_mode(topic)})
-
-@app.route("/agent", methods=["POST"])
-def agent():
-    data = request.json
-    task = data.get("task","")
-    sid  = data.get("session_id","x")
-    if not task:
-        return jsonify({"result":"Sin tarea"}),400
-    return jsonify({"result":autonomous_agent(task,sid)})
+    return jsonify({"result": analyze_image(img_b64, prompt)})
 
 @app.route("/tasks", methods=["GET","POST","PUT"])
 def tasks():
-    sid = request.args.get("session_id") or \
-          request.json.get("session_id","x") \
-          if request.json else "x"
-
     if request.method == "GET":
-        return jsonify({"tasks":tasks_store.get(sid,[])})
+        sid = request.args.get("session_id","x")
+        return jsonify({"tasks": tasks_store.get(sid,[])})
+
+    data = request.json
+    sid  = data.get("session_id","x")
 
     if request.method == "POST":
-        text = request.json.get("text","")
-        if sid not in tasks_store:
-            tasks_store[sid] = []
+        text = data.get("text","")
+        if sid not in tasks_store: tasks_store[sid]=[]
         tasks_store[sid].append({"text":text,"done":False})
         return jsonify({"status":"ok","tasks":tasks_store[sid]})
 
     if request.method == "PUT":
-        idx = request.json.get("index",0)
-        if sid in tasks_store and idx < len(tasks_store[sid]):
+        idx = data.get("index",0)
+        if sid in tasks_store and idx<len(tasks_store[sid]):
             tasks_store[sid][idx]["done"] = \
                 not tasks_store[sid][idx]["done"]
         return jsonify({"tasks":tasks_store.get(sid,[])})
@@ -641,88 +741,58 @@ def tasks():
 def memory():
     sid = request.args.get("session_id","x")
     return jsonify({
-        "memory":get_memory(sid),
-        "messages":len(convs.get(sid,[]))
-    })
-
-@app.route("/history", methods=["GET"])
-def history():
-    sid = request.args.get("session_id","x")
-    hist = conversation_history.get(sid,[])
-    return jsonify({
-        "history":hist[-50:],  # últimos 50
-        "total":len(hist)
+        "memory":   get_memory(sid),
+        "messages": len(convs.get(sid,[]))
     })
 
 @app.route("/history/export", methods=["GET"])
 def export_history():
-    """Exporta historial como JSON"""
-    sid    = request.args.get("session_id","x")
-    fmt    = request.args.get("format","json")
-    hist   = conversation_history.get(sid,[])
-
+    sid  = request.args.get("session_id","x")
+    fmt  = request.args.get("format","json")
+    hist = conversation_history.get(sid,[])
     if fmt == "txt":
-        lines = [f"=== HISTORIAL NOVA 4.0 ===\n"]
+        lines = ["=== HISTORIAL DEEPNOVA ===\n"]
         for h in hist:
             lines.append(f"[{h['timestamp']}]")
             lines.append(f"Tú: {h['user']}")
-            lines.append(f"Nova: {h['nova']}\n")
-        content = "\n".join(lines)
-        buf = io.BytesIO(content.encode("utf-8"))
-        return send_file(buf,
-            mimetype="text/plain",
-            as_attachment=True,
-            download_name="nova_historial.txt")
-
-    # JSON por defecto
+            lines.append(f"DeepNova: {h['nova']}")
+            lines.append(f"Modos: {', '.join(h.get('modes_used',[]))}\n")
+        buf = io.BytesIO("\n".join(lines).encode("utf-8"))
+        return send_file(buf, mimetype="text/plain",
+                        as_attachment=True,
+                        download_name="deepnova_historial.txt")
     buf = io.BytesIO(
         json.dumps(hist,ensure_ascii=False,indent=2).encode("utf-8")
     )
-    return send_file(buf,
-        mimetype="application/json",
-        as_attachment=True,
-        download_name="nova_historial.json")
+    return send_file(buf, mimetype="application/json",
+                    as_attachment=True,
+                    download_name="deepnova_historial.json")
 
 @app.route("/analytics", methods=["GET"])
 def analytics():
-    """Dashboard de analytics"""
-    sid = request.args.get("session_id","x")
+    sid  = request.args.get("session_id","x")
     hist = conversation_history.get(sid,[])
-
-    # Modelos usados
     model_counts = defaultdict(int)
+    mode_counts  = defaultdict(int)
     for h in hist:
-        m = h.get("model","unknown")
-        if "8b" in m:    model_counts["LLaMA 3.1"]  += 1
-        elif "70b" in m: model_counts["LLaMA 70B"]  += 1
-        elif "deep" in m:model_counts["DeepSeek R1"] += 1
-        else:            model_counts["Otro"] += 1
-
-    # Horas de uso
-    hours = defaultdict(int)
-    for h in hist:
-        try:
-            hour = h["timestamp"].split(" ")[1].split(":")[0]
-            hours[hour] += 1
-        except:
-            pass
-
+        m = h.get("model","")
+        if "70b" in m: model_counts["LLaMA 70B"] += 1
+        else:           model_counts["LLaMA 3.1"] += 1
+        for mode in h.get("modes_used",[]):
+            mode_counts[mode] += 1
     return jsonify({
-        "total_messages": len(hist),
-        "models_used": dict(model_counts),
-        "hours": dict(hours),
+        "total":        len(hist),
+        "models":       dict(model_counts),
+        "modes":        dict(mode_counts),
         "memory_items": len(get_memory(sid)),
-        "active_tasks": len([
-            t for t in tasks_store.get(sid,[])
-            if not t["done"]
-        ])
+        "active_tasks": len([t for t in tasks_store.get(sid,[])
+                             if not t["done"]])
     })
 
 @app.route("/search", methods=["POST"])
 def search():
-    query = request.json.get("query","")
-    results = web_search(query)
-    return jsonify({"results":results or "Sin resultados"})
+    q = request.json.get("query","")
+    return jsonify({"results": web_search(q) or "Sin resultados"})
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
@@ -746,7 +816,7 @@ def analyze():
             ],
             temperature=0.5, max_tokens=800
         )
-        return jsonify({"result":r.choices[0].message.content})
+        return jsonify({"result": r.choices[0].message.content})
     except Exception as e:
         return jsonify({"result":f"Error: {str(e)}"}),500
 
