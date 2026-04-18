@@ -4,6 +4,8 @@ import groq, os, re, time, json, requests, base64
 from collections import defaultdict
 from datetime import datetime
 import io
+import subprocess
+import tempfile
 
 app = Flask(__name__)
 CORS(app)
@@ -76,7 +78,7 @@ ESTILO:
 
 PERSONALIDAD:
 Útil, creativa, profesional, obsesionada con la excelencia.
-Tu objetivo es ser la experiencia de IA más excepcional posible.
+Tu objetivo ser la experiencia de IA más excepcional posible.
 
 REGLAS DE EJECUCIÓN OBLIGATORIAS:
 
@@ -219,6 +221,212 @@ def is_safe(text):
     return True, ""
 
 # ══════════════════════════════════════════
+# SANDBOX DE EJECUCIÓN DE CÓDIGO PYTHON
+# ══════════════════════════════════════════
+
+BLOCKED_CODE_PATTERNS = [
+    r"import\s+os(?!\s*\.path)",
+    r"import\s+sys",
+    r"import\s+subprocess",
+    r"__import__",
+    r"eval\s*\(",
+    r"exec\s*\(",
+    r"open\s*\(",
+    r"socket\.",
+    r"shutil\.",
+    r"rmdir|remove|unlink",
+]
+
+def is_code_safe(code):
+    """Verifica que el código sea seguro para ejecutar"""
+    for pattern in BLOCKED_CODE_PATTERNS:
+        if re.search(pattern, code):
+            return False, f"Patrón bloqueado: {pattern}"
+    return True, ""
+
+def execute_python(code, timeout=10):
+    """
+    Ejecuta código Python en proceso separado (sandbox).
+    Retorna dict con output, error y success.
+    """
+    safe, reason = is_code_safe(code)
+    if not safe:
+        return {
+            "output":  "",
+            "error":   f"⚠️ Código bloqueado por seguridad: {reason}",
+            "success": False
+        }
+
+    # Wrapper que captura stdout/stderr
+    indented = "\n".join("    " + line for line in code.strip().split("\n"))
+    wrapper = f"""
+import sys, io, traceback
+_out = io.StringIO()
+sys.stdout = _out
+sys.stderr = _out
+try:
+{indented}
+except Exception as _e:
+    print(f"ERROR: {{type(_e).__name__}}: {{_e}}")
+    print(traceback.format_exc())
+finally:
+    sys.stdout = sys.__stdout__
+    print(_out.getvalue(), end='')
+"""
+
+    try:
+        result = subprocess.run(
+            ["python3", "-c", wrapper],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            env={
+                "PATH": "/usr/bin:/bin",
+                "HOME": "/tmp",
+                "PYTHONPATH": ""
+            }
+        )
+
+        output = result.stdout.strip()
+        error  = result.stderr.strip()
+
+        if len(output) > 3000:
+            output = output[:3000] + "\n... (output truncado)"
+
+        return {
+            "output":  output,
+            "error":   error,
+            "success": result.returncode == 0 and not output.startswith("ERROR:")
+        }
+
+    except subprocess.TimeoutExpired:
+        return {
+            "output":  "",
+            "error":   "⏱️ Tiempo límite excedido (10 segundos)",
+            "success": False
+        }
+    except Exception as e:
+        return {
+            "output":  "",
+            "error":   f"Error del sistema: {str(e)}",
+            "success": False
+        }
+
+def extract_python_code(text):
+    """Extrae el primer bloque de código Python de un texto"""
+    pattern = r"```(?:python|py)?\n?([\s\S]*?)```"
+    matches = re.findall(pattern, text)
+    return matches[0].strip() if matches else None
+
+def deepnova_execute(task, sid):
+    """
+    Ciclo completo: Generar → Ejecutar → Verificar → Autocorregir
+    """
+    results = []
+
+    try:
+        # PASO 1: Generar código
+        results.append("**🔧 Generando código Python...**")
+
+        gen_r = get_groq().chat.completions.create(
+            model=MODELS["smart"],
+            messages=[
+                {"role": "system", "content":
+                 "Eres un programador Python experto. "
+                 "Genera SOLO código Python funcional y ejecutable. "
+                 "Usa print() para mostrar TODOS los resultados. "
+                 "NO uses: os, sys, subprocess, requests, open(). "
+                 "El código debe ser autocontenido y completo."},
+                {"role": "user", "content":
+                 f"Escribe código Python para: {task}\n"
+                 f"Asegúrate de imprimir los resultados con print()"}
+            ],
+            max_tokens=1000,
+            temperature=0.3
+        )
+        generated = gen_r.choices[0].message.content
+        code = extract_python_code(generated) or generated.strip()
+
+        results.append(f"**📝 Código generado:**\n```python\n{code}\n```")
+
+        # PASO 2: Ejecutar
+        results.append("**⚡ Ejecutando en sandbox seguro...**")
+        execution = execute_python(code)
+
+        if execution["success"] and execution["output"]:
+            results.append(
+                f"**✅ Resultado real:**\n```\n{execution['output']}\n```"
+            )
+
+            # PASO 3: Analizar resultado
+            analysis_r = get_groq().chat.completions.create(
+                model=MODELS["fast"],
+                messages=[
+                    {"role": "system", "content":
+                     "Analiza brevemente el resultado en español. "
+                     "Explica qué hace el código y qué significa el output. "
+                     "Máximo 3 oraciones."},
+                    {"role": "user", "content":
+                     f"Tarea: {task}\n"
+                     f"Código:\n{code}\n"
+                     f"Output:\n{execution['output']}"}
+                ],
+                max_tokens=200,
+                temperature=0.5
+            )
+            results.append(
+                f"**💡 Análisis:**\n{analysis_r.choices[0].message.content}"
+            )
+
+        else:
+            # PASO 4: Autocorrección
+            error_info = execution["error"] or execution["output"] or "Sin output"
+            results.append(
+                f"**⚠️ Error detectado:**\n```\n{error_info}\n```"
+            )
+            results.append("**🔄 Autocorrigiendo código...**")
+
+            fix_r = get_groq().chat.completions.create(
+                model=MODELS["smart"],
+                messages=[
+                    {"role": "system", "content":
+                     "Eres un debugger Python experto. "
+                     "Corrige el código. Retorna SOLO el código "
+                     "corregido en bloque ```python```."},
+                    {"role": "user", "content":
+                     f"Tarea: {task}\n"
+                     f"Código con error:\n```python\n{code}\n```\n"
+                     f"Error: {error_info}\n"
+                     f"Corrige el código:"}
+                ],
+                max_tokens=800,
+                temperature=0.2
+            )
+            fixed_text = fix_r.choices[0].message.content
+            fixed_code = extract_python_code(fixed_text) or fixed_text.strip()
+
+            results.append(
+                f"**🔧 Código corregido:**\n```python\n{fixed_code}\n```"
+            )
+
+            # Re-ejecutar código corregido
+            fixed_exec = execute_python(fixed_code)
+
+            if fixed_exec["success"] and fixed_exec["output"]:
+                results.append(
+                    f"**✅ Resultado tras corrección:**\n```\n{fixed_exec['output']}\n```"
+                )
+            else:
+                results.append(
+                    f"**❌ No se pudo ejecutar:**\n```\n{fixed_exec['error'] or 'Sin output'}\n```"
+                )
+
+    except Exception as e:
+        results.append(f"**❌ Error inesperado:** {str(e)}")
+
+    return "\n\n".join(results)
+
+# ══════════════════════════════════════════
 # BÚSQUEDA WEB
 # ══════════════════════════════════════════
 def web_search(query):
@@ -324,6 +532,15 @@ def detect_modes(msg):
         ["busca", "investiga", "research", "noticias", "precio"]):
         modes.append("search")
 
+    # Detectar si quiere ejecutar código
+    if any(w in msg_lower for w in
+        ["ejecuta", "ejecutar", "corre", "correr", "/ejecutar",
+         "/run", "calcula con python", "resultado de",
+         "qué da este código", "output de"]):
+        if "code" not in modes:
+            modes.append("code")
+        modes.append("execute")
+
     if not modes:
         modes.append("chat")
 
@@ -338,6 +555,10 @@ def build_unified_system(modes, web_ctx="", mem_ctx="", lang="español"):
             "MODO CÓDIGO ACTIVO: Genera código limpio, "
             "comentado, funcional y listo para producción. "
             "Explica cada sección. Incluye manejo de errores.")
+    if "execute" in modes:
+        mode_instructions.append(
+            "MODO EJECUCIÓN ACTIVO: Puedes ejecutar código Python real. "
+            "Genera código con print() para ver resultados reales.")
     if "design" in modes:
         mode_instructions.append(
             "MODO DISEÑO ACTIVO: Prioriza diseños premium con "
@@ -545,6 +766,10 @@ def process_command(msg, sid):
         r = web_search(q)
         return f"**🌐 Búsqueda: {q}**\n\n{r or 'Sin resultados'}", True, ["search"]
 
+    if s.startswith("/ejecutar ") or s.startswith("/run "):
+        task = s.split(" ", 1)[1]
+        return deepnova_execute(task, sid), True, ["code", "execute"]
+
     if s.startswith("/traducir "):
         return None, False, ["translate"]
 
@@ -584,11 +809,12 @@ def home():
 @app.route("/health")
 def health():
     return jsonify({
-        "status": "ok",
-        "version": "DeepNova 1.0",
-        "models": list(MODELS.keys()),
-        "sessions": len(convs),
-        "memories": len(permanent_memory)
+        "status":    "ok",
+        "version":   "DeepNova 2.0",
+        "models":    list(MODELS.keys()),
+        "sessions":  len(convs),
+        "memories":  len(permanent_memory),
+        "sandbox":   "Python executor active"
     })
 
 @app.route("/chat", methods=["POST"])
@@ -613,7 +839,7 @@ def chat():
     cmd, is_cmd, cmd_modes = process_command(msg, sid)
     if is_cmd:
         return jsonify({
-            "response": cmd,
+            "response":   cmd,
             "modes_used": cmd_modes,
             "model_used": "DeepNova Command"
         })
@@ -622,6 +848,22 @@ def chat():
     modes = detect_modes(msg)
     if cmd_modes:
         modes = list(set(modes + cmd_modes))
+
+    # Ejecución automática de código
+    execute_keywords = [
+        "ejecuta este código", "corre este código",
+        "calcula con python", "ejecuta en python",
+        "qué da este código"
+    ]
+    if any(k in msg.lower() for k in execute_keywords) or \
+       "execute" in modes:
+        result = deepnova_execute(msg, sid)
+        save_history(sid, msg, result, "Python-Executor", modes)
+        return jsonify({
+            "response":   result,
+            "modes_used": ["code", "execute"] + modes,
+            "model_used": "Python-Executor"
+        })
 
     # Búsqueda web
     web_ctx  = ""
@@ -642,7 +884,7 @@ def chat():
         result = autonomous_agent(msg, sid)
         save_history(sid, msg, result, "Multi-Agent", modes)
         return jsonify({
-            "response": result,
+            "response":   result,
             "modes_used": ["agent"] + modes,
             "model_used": "Multi-Agent",
             "web_search": web_used
@@ -654,7 +896,7 @@ def chat():
         result = debate_mode(topic)
         save_history(sid, msg, result, "Debate", modes)
         return jsonify({
-            "response": result,
+            "response":   result,
             "modes_used": modes,
             "model_used": "Debate Mode"
         })
@@ -686,11 +928,10 @@ def chat():
         # Limitar historial según modelo para evitar error 413
         max_hist = 6 if model == MODELS["fast"] else 14
 
-        # Truncar mensajes muy largos
         def truncate_msg(m, max_chars=500):
             if len(m["content"]) > max_chars:
                 return {
-                    "role": m["role"],
+                    "role":    m["role"],
                     "content": m["content"][:max_chars] + "..."
                 }
             return m
@@ -732,6 +973,27 @@ def chat():
         if convs[sid]:
             convs[sid].pop()
         return jsonify({"response": f"Error: {str(e)}"}), 500
+
+@app.route("/execute", methods=["POST"])
+def execute_endpoint():
+    """Endpoint para ejecutar código Python directamente desde el panel"""
+    data = request.json
+    code = data.get("code", "").strip()
+    sid  = data.get("session_id", "x")
+
+    if not code:
+        return jsonify({"result": "Sin código", "success": False}), 400
+
+    safe, reason = is_code_safe(code)
+    if not safe:
+        return jsonify({
+            "output":  "",
+            "error":   f"⚠️ Código bloqueado: {reason}",
+            "success": False
+        }), 400
+
+    result = execute_python(code)
+    return jsonify(result)
 
 @app.route("/image", methods=["POST"])
 def image():
