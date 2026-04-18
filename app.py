@@ -5,10 +5,23 @@ import groq, os
 app = Flask(__name__)
 CORS(app)
 
-client = groq.Groq(api_key=os.environ.get("GROQ_API_KEY"))
+# Inicializar cliente de forma lazy
+# (evita errores al arrancar)
+_client = None
+
+def get_client():
+    global _client
+    if _client is None:
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY no configurada")
+        _client = groq.Groq(api_key=api_key)
+    return _client
+
 MODEL  = "llama-3.1-8b-instant"
 SYSTEM = """Eres un asistente personal inteligente.
-Respondes SIEMPRE en español, eres amigable y recuerdas la conversación."""
+Respondes SIEMPRE en español, eres amigable 
+y recuerdas la conversación."""
 convs  = {}
 
 @app.route("/")
@@ -25,12 +38,16 @@ def chat():
         data = request.json
         msg  = data.get("message","")
         sid  = data.get("session_id","x")
+
         if not msg:
             return jsonify({"response":"Escribe algo 😊"}), 400
+
         if sid not in convs:
             convs[sid] = []
+
         convs[sid].append({"role":"user","content":msg})
-        r = client.chat.completions.create(
+
+        r = get_client().chat.completions.create(
             model=MODEL,
             messages=[{"role":"system","content":SYSTEM}]+convs[sid][-20:],
             temperature=0.8,
@@ -39,6 +56,7 @@ def chat():
         ans = r.choices[0].message.content
         convs[sid].append({"role":"assistant","content":ans})
         return jsonify({"response":ans})
+
     except Exception as e:
         return jsonify({"response":f"Error: {str(e)}"}),500
 
