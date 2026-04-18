@@ -723,33 +723,57 @@ def chat():
     # Inicializar sesión
     if sid not in convs: convs[sid] = []
 
-    try:
-       convs[sid].append({"role":"user","content":msg})
+        try:
+        convs[sid].append({"role":"user","content":msg})
 
-# Limitar historial según el modelo
-# LLaMA 8B tiene límite bajo de tokens
-max_hist = 6 if model == MODELS["fast"] else 14
+        # Limitar historial según modelo
+        max_hist = 6 if model == MODELS["fast"] else 14
 
-# Truncar mensajes largos del historial
-def truncate_msg(m, max_chars=500):
-    if len(m["content"]) > max_chars:
-        return {"role": m["role"],
-                "content": m["content"][:max_chars] + "..."}
-    return m
+        # Truncar mensajes muy largos
+        def truncate_msg(m, max_chars=500):
+            if len(m["content"]) > max_chars:
+                return {
+                    "role": m["role"],
+                    "content": m["content"][:max_chars] + "..."
+                }
+            return m
 
-historial_seguro = [
-    truncate_msg(m) for m in convs[sid][-max_hist:]
-]
+        historial_seguro = [
+            truncate_msg(m) for m in convs[sid][-max_hist:]
+        ]
 
-r = get_groq().chat.completions.create(
-    model=model,
-    messages=[
-        {"role":"system","content":system[:2000]}
-    ] + historial_seguro,
-    temperature=0.8,
-    max_tokens=1000
-)
+        r = get_groq().chat.completions.create(
+            model=model,
+            messages=[
+                {"role":"system","content":system[:2000]}
+            ] + historial_seguro,
+            temperature=0.8,
+            max_tokens=1000
+        )
         response = r.choices[0].message.content
+
+        # Multi-IA verificación
+        if multi and len(msg) > 20:
+            response = multi_verify(msg, response)
+
+        convs[sid].append({"role":"assistant","content":response})
+
+        # Guardar
+        extract_memory(sid, msg)
+        save_history(sid, msg, response, model, modes)
+
+        return jsonify({
+            "response":    response,
+            "model_used":  model,
+            "modes_used":  modes,
+            "web_search":  web_used,
+            "language":    lang,
+            "memory_active": bool(get_memory(sid))
+        })
+
+    except Exception as e:
+        if convs[sid]: convs[sid].pop()
+        return jsonify({"response":f"Error: {str(e)}"}),500
 
         # Multi-IA verificación
         if multi and len(msg) > 20:
