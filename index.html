@@ -74,6 +74,7 @@ html,body{
 .sb-scroll{
   flex:1;
   overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
   scrollbar-width:thin;
   scrollbar-color:rgba(99,102,241,0.2) transparent;
 }
@@ -480,9 +481,8 @@ html,body{
 .mob-overlay{
   display:none;
   position:fixed;inset:0;
-  background:rgba(0,0,0,0.6);
+  background:rgba(0,0,0,0.5);
   z-index:998;
-  backdrop-filter:blur(4px);
 }
 .mob-overlay.on{display:block}
 
@@ -495,7 +495,11 @@ html,body{
     transition:left .3s ease;
     box-shadow:4px 0 20px rgba(0,0,0,0.4);
   }
-  .sidebar.mob-open{left:0}
+  .sidebar.mob-open{
+  left:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
   .rp{display:none!important}
   .chat-main{width:100vw;border:none}
   .mob-menu-btn{display:flex}
@@ -977,6 +981,7 @@ function setSBMode(el, mode){
   curMode=mode;
   document.querySelectorAll('.ni').forEach(i=>i.classList.remove('active'));
   el.classList.add('active');
+  closeSidebar();
   const labels={
     chat:'Chat General', code:'Vibe Coding', design:'Diseño Web',
     content:'Contenido', analyze:'Análisis', reason:'Razonamiento',
