@@ -1300,10 +1300,9 @@ function setTheme(el, name){
 
 <!-- ====================== FUNCIÓN EJECUTAR PYTHON ====================== -->
 <script>
-// ==================== FUNCIÓN EJECUTAR PYTHON (VERSIÓN CORREGIDA) ====================
 async function runCode() {
-  const textarea = document.getElementById('codeExec');
-  const code = textarea.value.trim();
+  const textarea  = document.getElementById('codeExec');
+  const code      = textarea.value.trim();
   const resultDiv = document.getElementById('codeResult');
 
   if (!code) {
@@ -1311,43 +1310,60 @@ async function runCode() {
     return;
   }
 
-  resultDiv.textContent = '⏳ Ejecutando en Python...';
+  resultDiv.innerHTML = '⏳ Ejecutando en Python...';
   resultDiv.classList.add('on');
-  resultDiv.style.color = '';
-
-  console.log('%c[RUN CODE] Enviando código:', 'color:#6366f1;font-weight:bold', code);
 
   try {
     const res = await fetch(API + '/execute', {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: code, session_id: sid })
+      body:    JSON.stringify({ code: code, session_id: sid })
     });
 
-    console.log('%c[RUN CODE] Status recibido:', 'color:#10b981', res.status);
-
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
-    console.log('%c[RUN CODE] Respuesta del servidor:', 'color:#10b981', data);
 
-    if (data.output !== undefined && data.output !== '') {
-      resultDiv.innerHTML = `<pre style="margin:0; white-space:pre-wrap; font-family:Consolas,monospace; font-size:13px; background:#0f172a; padding:12px; border-radius:8px;">${esc(data.output)}</pre>`;
-    } 
-    else if (data.error) {
-      resultDiv.innerHTML = `<span style="color:#f87171">❌ ${esc(data.error)}</span>`;
-    } 
-    else {
-      resultDiv.innerHTML = `<span style="color:#4ade80">✅ Ejecutado correctamente (sin salida)</span>`;
+    if (data.success && data.output) {
+      resultDiv.innerHTML = `
+        <span style="color:var(--green)">✅ Output:</span>
+        <pre style="margin:6px 0 0;white-space:pre-wrap;
+             font-family:Consolas,monospace;font-size:12px;
+             background:rgba(0,0,0,0.3);padding:10px;
+             border-radius:8px;color:#a5f3fc">
+${escHtml(data.output)}</pre>`;
+      toast('✅ Código ejecutado');
+
+    } else if (data.error) {
+      resultDiv.innerHTML = `
+        <span style="color:var(--red)">❌ Error:</span>
+        <pre style="margin:6px 0 0;white-space:pre-wrap;
+             font-family:Consolas,monospace;font-size:12px;
+             background:rgba(0,0,0,0.3);padding:10px;
+             border-radius:8px;color:#f87171">
+${escHtml(data.error)}</pre>`;
+      toast('❌ Error en ejecución');
+
+    } else {
+      resultDiv.innerHTML =
+        '<span style="color:var(--green)">✅ Ejecutado (sin output)</span>';
+      toast('✅ Ejecutado correctamente');
     }
-  } 
-  catch (e) {
-    console.error('%c[RUN CODE] ERROR:', 'color:#f87171', e);
-    resultDiv.innerHTML = `<span style="color:#f87171">⚠️ Error: ${e.message || 'Error de conexión'}</span>`;
-    toast('❌ Error al ejecutar. Revisa consola (F12)');
+
+  } catch(e) {
+    resultDiv.innerHTML =
+      `<span style="color:var(--red)">⚠️ Error: ${e.message}</span>`;
+    toast('❌ Error de conexión');
   }
+}
+
+// Función escHtml local para este bloque
+function escHtml(t) {
+  return String(t)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 </script>
 
