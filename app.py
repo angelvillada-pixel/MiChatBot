@@ -1,8 +1,9 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import groq, os, re, time, json, requests, base64
-from collections import defaultdict
+from collections import defaultdict, Counter
 from datetime import datetime
+from urllib.parse import urlparse
 import io
 import subprocess
 import tempfile
@@ -196,6 +197,107 @@ def save_history(sid, msg, response, model, modes):
     save_json(HISTORY_FILE, conversation_history)
 
 # ══════════════════════════════════════════
+# MEMORIA VECTORIAL SIMPLE
+# ══════════════════════════════════════════
+KNOWLEDGE_FILE = "deepnova_knowledge.json"
+
+def load_knowledge():
+    return load_json(KNOWLEDGE_FILE) or {"entries": []}
+
+def save_knowledge(data):
+    save_json(KNOWLEDGE_FILE, data)
+
+knowledge_base = load_knowledge()
+
+def extract_keywords(text, max_kw=10):
+    """Extrae palabras clave de un texto"""
+    stopwords = {
+        "el","la","los","las","un","una","de","del","en","con",
+        "por","para","que","es","son","al","se","no","lo","su",
+        "más","como","pero","este","esta","hay","fue","ser",
+        "tiene","hacer","puede","muy","ya","también","todo",
+        "the","is","are","was","were","have","has","do","does",
+        "a","an","and","or","but","in","on","at","to","for","of"
+    }
+    words = re.findall(r'\b[a-záéíóúñü]{3,}\b', text.lower())
+    word_freq = Counter(w for w in words if w not in stopwords)
+    return [w for w, _ in word_freq.most_common(max_kw)]
+
+def add_to_knowledge(sid, category, content, source="user"):
+    """Añade información a la base de conocimiento"""
+    if not content or len(content) < 10:
+        return
+    entry = {
+        "sid":       sid,
+        "category":  category,
+        "content":   content[:500],
+        "source":    source,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "keywords":  extract_keywords(content)
+    }
+    knowledge_base["entries"].append(entry)
+    if len(knowledge_base["entries"]) > 1000:
+        knowledge_base["entries"] = knowledge_base["entries"][-1000:]
+    save_knowledge(knowledge_base)
+
+def search_knowledge(query, sid=None, max_results=5):
+    """Busca en la base de conocimiento por similitud de keywords"""
+    query_kw = set(extract_keywords(query))
+    if not query_kw:
+        return []
+    results = []
+    for entry in knowledge_base.get("entries", []):
+        if sid and entry.get("sid") != sid and entry.get("sid") != "global":
+            continue
+        entry_kw = set(entry.get("keywords", []))
+        if not entry_kw:
+            continue
+        common = query_kw.intersection(entry_kw)
+        if common:
+            score = len(common) / max(len(query_kw), len(entry_kw))
+            results.append({
+                "content":  entry["content"],
+                "category": entry.get("category", "general"),
+                "score":    round(score, 3),
+                "source":   entry.get("source", "unknown"),
+            })
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return results[:max_results]
+
+def get_knowledge_context(query, sid):
+    """Genera contexto desde la base de conocimiento"""
+    results = search_knowledge(query, sid)
+    if not results:
+        return ""
+    lines = ["\n\nCONOCIMIENTO RELEVANTE:"]
+    for r in results:
+        lines.append(f"- [{r['category']}] {r['content'][:200]}")
+    return "\n".join(lines)
+
+def auto_learn(sid, msg, response):
+    """Aprende automáticamente de conversaciones"""
+    msg_lower = msg.lower()
+    if any(t in msg_lower for t in
+        ["mi empresa","mi proyecto","mi sitio","mi app",
+         "trabajo en","estoy creando","estoy desarrollando"]):
+        add_to_knowledge(sid, "proyecto", msg, "user")
+    if any(t in msg_lower for t in
+        ["prefiero","me gusta usar","siempre uso",
+         "mi stack","mi framework","mi lenguaje"]):
+        add_to_knowledge(sid, "preferencia", msg, "user")
+    if any(t in msg_lower for t in
+        ["la api es","el endpoint","la base de datos",
+         "el servidor","el dominio"]):
+        add_to_knowledge(sid, "técnico", msg, "user")
+    if len(response) > 200 and any(t in msg_lower for t in
+        ["explica","cómo funciona","qué es","tutorial","guía"]):
+        add_to_knowledge(
+            "global", "conocimiento",
+            f"Q: {msg[:100]} | A: {response[:300]}",
+            "deepnova"
+        )
+
+# ══════════════════════════════════════════
 # RATE LIMIT Y SEGURIDAD
 # ══════════════════════════════════════════
 rate_counts = defaultdict(list)
@@ -268,8 +370,8 @@ def execute_python(code, timeout=10):
     sys.stdout = io.StringIO()
     sys.stderr = io.StringIO()
 
-    output = ""
-    error  = ""
+    output  = ""
+    error   = ""
     success = False
 
     try:
@@ -315,31 +417,31 @@ def execute_python(code, timeout=10):
                 "all":        all,
                 "next":       next,
                 "iter":       iter,
-                "input":      lambda x="": "",  # input deshabilitado
+                "input":      lambda x="": "",
                 "hash":       hash,
                 "id":         id,
                 "dir":        dir,
                 "vars":       vars,
                 "help":       lambda x=None: "Help no disponible",
                 # Excepciones comunes
-                "Exception":        Exception,
-                "ValueError":       ValueError,
-                "TypeError":        TypeError,
-                "KeyError":         KeyError,
-                "IndexError":       IndexError,
-                "AttributeError":   AttributeError,
-                "NameError":        NameError,
-                "ZeroDivisionError":ZeroDivisionError,
-                "StopIteration":    StopIteration,
-                "RuntimeError":     RuntimeError,
+                "Exception":           Exception,
+                "ValueError":          ValueError,
+                "TypeError":           TypeError,
+                "KeyError":            KeyError,
+                "IndexError":          IndexError,
+                "AttributeError":      AttributeError,
+                "NameError":           NameError,
+                "ZeroDivisionError":   ZeroDivisionError,
+                "StopIteration":       StopIteration,
+                "RuntimeError":        RuntimeError,
                 "NotImplementedError": NotImplementedError,
-                "OverflowError":    OverflowError,
-                "MemoryError":      MemoryError,
-                "RecursionError":   RecursionError,
+                "OverflowError":       OverflowError,
+                "MemoryError":         MemoryError,
+                "RecursionError":      RecursionError,
                 # Constantes
-                "True":   True,
-                "False":  False,
-                "None":   None,
+                "True":       True,
+                "False":      False,
+                "None":       None,
                 # Permitir import de módulos seguros
                 "__import__": __import__,
             },
@@ -357,15 +459,15 @@ def execute_python(code, timeout=10):
             "fractions":   fractions,
             "string":      string,
         }
-        
+
         exec(compile(code, "<deepnova>", "exec"), safe_globals)
 
         output  = sys.stdout.getvalue()
         success = True
 
     except Exception as e:
-        output = sys.stdout.getvalue()
-        error  = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
+        output  = sys.stdout.getvalue()
+        error   = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
         success = False
 
     finally:
@@ -517,12 +619,81 @@ def web_search(query):
     except:
         return None
 
+# ══════════════════════════════════════════
+# WEB SCRAPING REAL
+# ══════════════════════════════════════════
+def is_url_safe(url):
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+        blocked = ["localhost", "127.0.0.1", "0.0.0.0", "10.", "192.168."]
+        for b in blocked:
+            if b in parsed.netloc:
+                return False
+        return True
+    except:
+        return False
+
+def scrape_url(url, max_chars=4000):
+    try:
+        if not is_url_safe(url):
+            return None, "URL no permitida"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; DeepNova/1.0)"
+        }
+        r = requests.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+        html = r.text
+        html = re.sub(r'<script[^>]*>[\s\S]*?</script>', '', html)
+        html = re.sub(r'<style[^>]*>[\s\S]*?</style>', '', html)
+        html = re.sub(r'<nav[^>]*>[\s\S]*?</nav>', '', html)
+        html = re.sub(r'<footer[^>]*>[\s\S]*?</footer>', '', html)
+        html = re.sub(r'<header[^>]*>[\s\S]*?</header>', '', html)
+        html = re.sub(r'<h[1-6][^>]*>', '\n## ', html)
+        html = re.sub(r'</h[1-6]>', '\n', html)
+        html = re.sub(r'<li[^>]*>', '\n• ', html)
+        html = re.sub(r'<p[^>]*>', '\n', html)
+        html = re.sub(r'<br\s*/?>', '\n', html)
+        html = re.sub(r'<[^>]+>', '', html)
+        html = re.sub(r'&nbsp;', ' ', html)
+        html = re.sub(r'&amp;', '&', html)
+        html = re.sub(r'&lt;', '<', html)
+        html = re.sub(r'&gt;', '>', html)
+        html = re.sub(r'&#\d+;', '', html)
+        html = re.sub(r'\n\s*\n', '\n\n', html)
+        html = html.strip()
+        if len(html) < 50:
+            return None, "Página sin contenido legible"
+        if len(html) > max_chars:
+            html = html[:max_chars] + "\n\n... (contenido truncado)"
+        return html, None
+    except requests.exceptions.Timeout:
+        return None, "Timeout al acceder a la URL"
+    except requests.exceptions.HTTPError as e:
+        return None, f"Error HTTP: {e.response.status_code}"
+    except Exception as e:
+        return None, f"Error: {str(e)}"
+
+def extract_url(text):
+    pattern = r'https?://[^\s<>"\')\]]+'
+    match = re.search(pattern, text)
+    return match.group(0) if match else None
+
 def needs_search(msg):
     triggers = ["busca", "buscar", "qué es", "quién es", "cuándo",
                 "noticias", "hoy", "precio", "clima", "último",
                 "reciente", "2024", "2025", "actualidad", "/buscar",
                 "investiga", "research", "encuentra"]
     return any(t in msg.lower() for t in triggers)
+
+def needs_scraping(msg):
+    """Detecta si el mensaje contiene una URL para leer"""
+    return bool(extract_url(msg)) and any(
+        w in msg.lower() for w in
+        ["lee", "leer", "abre", "visita", "analiza esta",
+         "qué dice", "resumen de", "/leer", "contenido de"]
+    )
 
 # ══════════════════════════════════════════
 # DETECTOR DE IDIOMA
@@ -615,8 +786,8 @@ def detect_modes(msg):
 
     return modes
 
-def build_unified_system(modes, web_ctx="", mem_ctx="", lang="español"):
-    system = SYSTEM_BASE + mem_ctx
+def build_unified_system(modes, web_ctx="", mem_ctx="", lang="español", knowledge_ctx=""):
+    system = SYSTEM_BASE + mem_ctx + knowledge_ctx
     mode_instructions = []
 
     if "code" in modes:
@@ -835,6 +1006,34 @@ def process_command(msg, sid):
         r = web_search(q)
         return f"**🌐 Búsqueda: {q}**\n\n{r or 'Sin resultados'}", True, ["search"]
 
+    if s.startswith("/leer "):
+        url = extract_url(s[6:])
+        if not url:
+            return "⚠️ URL no válida. Usa: /leer https://ejemplo.com", True, ["search"]
+        content, error = scrape_url(url)
+        if error:
+            return f"⚠️ {error}", True, ["search"]
+        try:
+            r = get_groq().chat.completions.create(
+                model=MODELS["smart"],
+                messages=[
+                    {"role": "system", "content":
+                     "Analiza el contenido de esta página web. "
+                     "Resume los puntos clave en español. "
+                     "Formato claro con encabezados y listas."},
+                    {"role": "user", "content":
+                     f"URL: {url}\n\nContenido:\n{content[:3000]}"}
+                ],
+                max_tokens=800,
+                temperature=0.5
+            )
+            analysis = r.choices[0].message.content
+            return (f"**🌐 Análisis de:** {url}\n\n"
+                    f"---\n{analysis}"), True, ["search", "analyze"]
+        except Exception as e:
+            return (f"**🌐 Contenido de:** {url}\n\n"
+                    f"---\n{content[:2000]}"), True, ["search"]
+
     if s.startswith("/ejecutar ") or s.startswith("/run "):
         task = s.split(" ", 1)[1]
         return deepnova_execute(task, sid), True, ["code", "execute"]
@@ -847,6 +1046,40 @@ def process_command(msg, sid):
 
     if s.startswith("/codigo "):
         return None, False, ["code"]
+
+    if s == "/conocimiento" or s == "/knowledge":
+        entries = knowledge_base.get("entries", [])
+        if not entries:
+            return "🧠 Base de conocimiento vacía.", True, ["chat"]
+        cats = {}
+        for e in entries[-30:]:
+            cat = e.get("category", "general")
+            if cat not in cats:
+                cats[cat] = []
+            cats[cat].append(e["content"][:80])
+        result = "**🧠 Base de Conocimiento DeepNova**\n\n"
+        for cat, items in cats.items():
+            result += f"**{cat.upper()}:**\n"
+            for item in items[-3:]:
+                result += f"• {item}...\n"
+            result += "\n"
+        result += f"**Total:** {len(entries)} entradas"
+        return result, True, ["chat"]
+
+    if s.startswith("/aprender "):
+        content = s[10:]
+        if len(content) < 5:
+            return "⚠️ Escribe algo para aprender.", True, ["chat"]
+        add_to_knowledge(sid, "manual", content, "user")
+        return f"✅ Aprendido: **{content[:80]}**", True, ["chat"]
+
+    if s == "/olvidar":
+        knowledge_base["entries"] = [
+            e for e in knowledge_base.get("entries", [])
+            if e.get("sid") != sid
+        ]
+        save_knowledge(knowledge_base)
+        return "🗑️ Conocimiento personal borrado.", True, ["chat"]
 
     if s == "/tareas":
         tasks = tasks_store.get(sid, [])
@@ -918,6 +1151,23 @@ def chat():
     if cmd_modes:
         modes = list(set(modes + cmd_modes))
 
+    # Inicializar web_ctx ANTES de usarlo
+    web_ctx  = ""
+    web_used = False
+
+    # Web scraping automático si hay URL
+    if needs_scraping(msg):
+        url = extract_url(msg)
+        if url:
+            content, error = scrape_url(url)
+            if content:
+                web_ctx  = f"CONTENIDO DE {url}:\n{content[:2000]}"
+                web_used = True
+                if "search" not in modes:
+                    modes.append("search")
+                if "analyze" not in modes:
+                    modes.append("analyze")
+
     # Ejecución automática de código
     execute_keywords = [
         "ejecuta este código", "corre este código",
@@ -934,10 +1184,8 @@ def chat():
             "model_used": "Python-Executor"
         })
 
-    # Búsqueda web
-    web_ctx  = ""
-    web_used = False
-    if "search" in modes or needs_search(msg):
+    # Búsqueda web (solo si no se hizo scraping)
+    if not web_ctx and ("search" in modes or needs_search(msg)):
         result = web_search(msg)
         if result:
             web_ctx  = result
@@ -976,8 +1224,11 @@ def chat():
     # Memoria
     mem_ctx = get_memory_prompt(sid)
 
+    # Conocimiento relevante
+    knowledge_ctx = get_knowledge_context(msg, sid)
+
     # System unificado
-    system = build_unified_system(modes, web_ctx, mem_ctx, lang)
+    system = build_unified_system(modes, web_ctx, mem_ctx, lang, knowledge_ctx)
 
     # Seleccionar modelo
     if len(modes) > 2 or "reason" in modes or "agent" in modes:
@@ -1028,6 +1279,7 @@ def chat():
         # Guardar
         extract_memory(sid, msg)
         save_history(sid, msg, response, model, modes)
+        auto_learn(sid, msg, response)
 
         return jsonify({
             "response":      response,
@@ -1183,6 +1435,31 @@ def analyze():
     except Exception as e:
         return jsonify({"result": f"Error: {str(e)}"}), 500
 
+@app.route("/knowledge", methods=["GET"])
+def knowledge_endpoint():
+    sid      = request.args.get("session_id", "x")
+    entries  = knowledge_base.get("entries", [])
+    user_e   = [e for e in entries if e.get("sid") == sid]
+    global_e = [e for e in entries if e.get("sid") == "global"]
+    return jsonify({
+        "user_entries":   len(user_e),
+        "global_entries": len(global_e),
+        "total":          len(entries),
+        "recent":         entries[-10:]
+    })
+
+@app.route("/knowledge/search", methods=["POST"])
+def knowledge_search():
+    data    = request.json
+    query   = data.get("query", "")
+    sid     = data.get("session_id", "x")
+    results = search_knowledge(query, sid)
+    return jsonify({
+        "results": results,
+        "query":   query,
+        "total":   len(results)
+    })
+
 @app.route("/clear", methods=["POST"])
 def clear():
     sid = request.json.get("session_id", "x")
@@ -1196,6 +1473,29 @@ def clear_memory():
     convs[sid] = []
     save_json(MEMORY_FILE, permanent_memory)
     return jsonify({"status": "ok"})
+
+@app.route("/scrape", methods=["POST"])
+def scrape():
+    data = request.json
+    url  = data.get("url", "").strip()
+
+    if not url:
+        return jsonify({"result": "Sin URL", "success": False}), 400
+
+    if not is_url_safe(url):
+        return jsonify({"result": "URL no permitida", "success": False}), 400
+
+    content, error = scrape_url(url)
+
+    if error:
+        return jsonify({"result": error, "success": False})
+
+    return jsonify({
+        "result":  content,
+        "success": True,
+        "url":     url,
+        "chars":   len(content)
+    })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
