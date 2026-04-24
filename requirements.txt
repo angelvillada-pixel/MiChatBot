@@ -1,5 +1,5 @@
 # ══════════════════════════════════════════════════════════════════════
-# DeepNova v2 Híbrido — dependencias (optimizado para Railway <4GB)
+# DeepNova v3 PREMIUM — dependencias (optimizado para Railway <4GB)
 # ══════════════════════════════════════════════════════════════════════
 
 # Originales (DeepNova v1)
