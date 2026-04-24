@@ -25,3 +25,16 @@ numpy>=1.24.0
 # ❌ cairosvg removido: requiere libcairo2 a nivel de sistema (complica el build)
 # ✅ favicon.py cae automáticamente a Pillow
 pillow>=10.0.0
+
+# ══════════════════════════════════════════════════════════════════════
+# 🆕 v4 ULTRA · NeuroCore-X (sin dependencias pesadas adicionales)
+# ══════════════════════════════════════════════════════════════════════
+# neurocore_x.py   → usa solo stdlib
+# image_gen.py     → usa requests (ya incluido); opcional HF_TOKEN
+# user_profile.py  → usa solo stdlib
+# neurocore_routes.py → solo flask (ya incluido)
+# No se añaden librerías nuevas: todo funciona con las deps actuales.
+
+# ── v4 · NeuroCore-X (ULTRA reasoning + image-gen + user-profile) ──
+# Todas las dependencias ya incluidas arriba (requests, flask, pillow, numpy).
+# Pollinations.ai NO requiere API key. Hugging Face opcional via HF_TOKEN env.
