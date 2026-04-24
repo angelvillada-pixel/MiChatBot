@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#6366f1">
-<title>DeepNova — God-Tier Agent</title>
+<title>DeepNova v4 Ultra · NeuroCore-X · God-Tier Agent</title>
 
 <!-- 🆕 M7 · Identidad visual (favicon + manifest) -->
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -2449,8 +2449,11 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
       <div class="irow">
         <button class="imgbtn" onclick="document.getElementById('imgUp').click()" title="Imagen">🖼️</button>
         <button class="micbtn" id="micBtn" onclick="toggleMic()" title="Voz">🎤</button>
+        <button class="imgbtn" id="genImgBtn" onclick="openImgGen()" title="Generar imagen con NeuroCore-X" style="background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff">🎨</button>
+        <button class="imgbtn" id="ultraBtn" onclick="toggleUltra()" title="ULTRA Mode (NeuroCore-X)" style="font-weight:700">⚡</button>
+        <button class="imgbtn" id="profileBtn" onclick="openProfile()" title="Perfil del usuario">👤</button>
         <textarea id="inp"
-          placeholder="Escribe a DeepNova... /debate /agente /buscar /tarea"
+          placeholder="Escribe a NeuroCore-X... /debate /agente /buscar /tarea /imagen"
           rows="1"
           onkeydown="hKey(event)"
           oninput="oInp(this)"
@@ -2581,9 +2584,73 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 <script>
 const sid = 'dn_' + Math.random().toString(36).slice(2,9);
 const API = '';
-let msgs=0, srches=0, multi=false, voiceOut=false;
+let msgs=0, srches=0, multi=false, voiceOut=false, ultraMode=false;
 let rec=false, logoData=null, imgData=null;
 let curTask='resume', curMode='chat';
+
+/* 🆕 NeuroCore-X — ULTRA Mode toggle */
+function toggleUltra(){
+  ultraMode = !ultraMode;
+  const b = document.getElementById('ultraBtn');
+  if(ultraMode){
+    b.classList.add('on');
+    b.style.background = 'linear-gradient(135deg,#fbbf24,#f97316)';
+    b.style.color = '#000';
+    b.style.boxShadow = '0 0 18px rgba(251,191,36,0.6)';
+    if(typeof toast==='function') toast('⚡ ULTRA Mode ON — NeuroCore-X deep reasoning');
+  }else{
+    b.classList.remove('on');
+    b.style.background = '';
+    b.style.color = '';
+    b.style.boxShadow = '';
+    if(typeof toast==='function') toast('ULTRA Mode OFF');
+  }
+}
+
+/* 🆕 NeuroCore-X — Image generation helper (disponible desde consola/UI) */
+async function neuroGenImage(prompt, opts){
+  opts = opts || {};
+  try{
+    const r = await fetch(API+'/api/image/generate',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        prompt: prompt,
+        model:  opts.model  || 'flux',
+        style:  opts.style  || 'cinematic',
+        width:  opts.width  || 1024,
+        height: opts.height || 1024,
+        provider: opts.provider || 'auto'
+      })
+    });
+    const d = await r.json();
+    if(d.success && d.url){
+      if(typeof addMsg==='function'){
+        addMsg(`🎨 **Imagen generada** (${d.provider}/${d.model})\n\n![img](${d.url})`, 'bot', 'NeuroCore-X Image', ['image']);
+      }
+      return d;
+    }else{
+      if(typeof toast==='function') toast('⚠️ '+(d.error||'Error generando imagen'));
+    }
+  }catch(e){
+    if(typeof toast==='function') toast('⚠️ '+e.message);
+  }
+}
+window.neuroGenImage = neuroGenImage;
+
+/* 🆕 NeuroCore-X — User profile helpers */
+async function neuroGetProfile(){
+  const r = await fetch(API+'/api/profile?sid='+encodeURIComponent(sid));
+  return (await r.json()).profile;
+}
+async function neuroUpdateProfile(updates){
+  const r = await fetch(API+'/api/profile',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({sid, profile: updates})
+  });
+  return (await r.json()).profile;
+}
+window.neuroGetProfile = neuroGetProfile;
+window.neuroUpdateProfile = neuroUpdateProfile;
 
 // Speech Recognition
 let recognition=null;
@@ -2809,7 +2876,7 @@ async function send(){
     const r=await fetch(API+'/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:txt, session_id:sid, multi_model:multi})
+      body:JSON.stringify({message:txt, session_id:sid, multi_model:multi, ultra:ultraMode})
     });
     const d=await r.json();
     setTyping(false);
@@ -4345,6 +4412,391 @@ document.addEventListener('keydown', e => {
     init();
   }
 })();
+</script>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- 🆕 NEUROCORE-X UI EXTENSIONS · DeepNova v4 Ultra                       -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<style>
+/* === ULTRA button active state === */
+#ultraBtn{ transition:all .25s ease; position:relative; }
+#ultraBtn.on{
+  background:linear-gradient(135deg,#fbbf24,#f59e0b,#ef4444) !important;
+  color:#fff !important;
+  box-shadow:0 0 20px rgba(251,191,36,.6), 0 0 40px rgba(239,68,68,.3);
+  animation:ultraPulse 1.8s ease-in-out infinite;
+}
+@keyframes ultraPulse{
+  0%,100%{transform:scale(1);box-shadow:0 0 20px rgba(251,191,36,.6)}
+  50%{transform:scale(1.08);box-shadow:0 0 32px rgba(251,191,36,.9),0 0 50px rgba(239,68,68,.5)}
+}
+
+/* === Generic NeuroCore-X Modal === */
+.nx-modal{
+  position:fixed;inset:0;background:rgba(6,8,15,.82);backdrop-filter:blur(8px);
+  z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;
+}
+.nx-modal.open{display:flex;animation:nxFadeIn .25s ease}
+@keyframes nxFadeIn{from{opacity:0}to{opacity:1}}
+.nx-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:18px;
+  width:100%;max-width:560px;max-height:88vh;overflow-y:auto;
+  box-shadow:0 25px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(99,102,241,.12);
+}
+.nx-head{
+  padding:18px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(139,92,246,.06));
+}
+.nx-head h3{font-size:17px;font-weight:700;letter-spacing:.2px}
+.nx-close{
+  background:var(--s3);border:none;color:var(--text);
+  width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;
+  transition:all .2s;
+}
+.nx-close:hover{background:var(--red);color:#fff}
+.nx-body{padding:20px 22px}
+.nx-row{margin-bottom:14px}
+.nx-row label{
+  display:block;margin-bottom:6px;font-size:12px;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.5px;font-weight:600;
+}
+.nx-row input, .nx-row textarea, .nx-row select{
+  width:100%;padding:10px 12px;background:var(--s2);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-size:14px;font-family:inherit;
+  transition:all .2s;
+}
+.nx-row input:focus, .nx-row textarea:focus, .nx-row select:focus{
+  outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(99,102,241,.14);
+}
+.nx-row textarea{resize:vertical;min-height:72px}
+.nx-btns{display:flex;gap:10px;margin-top:8px}
+.nx-btn{
+  flex:1;padding:11px 14px;border-radius:10px;border:none;cursor:pointer;
+  font-weight:600;font-size:14px;transition:all .2s;font-family:inherit;
+}
+.nx-btn-primary{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff}
+.nx-btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(99,102,241,.35)}
+.nx-btn-ghost{background:var(--s2);color:var(--text);border:1px solid var(--border)}
+.nx-btn-ghost:hover{background:var(--s3)}
+
+/* === Image-gen preview === */
+.nx-imgprev{
+  margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--border);
+  background:var(--s2);min-height:200px;display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.nx-imgprev img{width:100%;display:block}
+.nx-imgprev .nx-empty{color:var(--text2);font-size:13px;padding:30px;text-align:center}
+.nx-spinner{
+  width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--p);
+  border-radius:50%;animation:nxSpin .9s linear infinite;
+}
+@keyframes nxSpin{to{transform:rotate(360deg)}}
+
+/* === Chips for styles === */
+.nx-chips{display:flex;flex-wrap:wrap;gap:6px}
+.nx-chip{
+  padding:6px 12px;background:var(--s3);border:1px solid var(--border);border-radius:999px;
+  font-size:12px;cursor:pointer;transition:all .2s;user-select:none;
+}
+.nx-chip:hover{border-color:var(--p)}
+.nx-chip.active{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border-color:transparent}
+
+/* Badge ULTRA in chat messages */
+.ultra-badge{
+  display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;
+  background:linear-gradient(135deg,#fbbf24,#ef4444);color:#fff;
+  font-size:10px;font-weight:700;letter-spacing:.8px;vertical-align:middle;
+}
+</style>
+
+<!-- ═══ IMAGE GENERATOR MODAL ═══ -->
+<div class="nx-modal" id="nxImgModal" onclick="if(event.target===this)closeImgGen()">
+  <div class="nx-card">
+    <div class="nx-head">
+      <h3>🎨 Generador de Imágenes · NeuroCore-X</h3>
+      <button class="nx-close" onclick="closeImgGen()">✕</button>
+    </div>
+    <div class="nx-body">
+      <div class="nx-row">
+        <label>Descripción (prompt)</label>
+        <textarea id="nxImgPrompt" placeholder="Ej: astronauta meditando en Marte, atardecer violeta..."></textarea>
+      </div>
+      <div class="nx-row">
+        <label>Estilo</label>
+        <div class="nx-chips" id="nxStyleChips"></div>
+      </div>
+      <div class="nx-row" style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label>Modelo</label>
+          <select id="nxImgModel">
+            <option value="flux" selected>Flux (defecto)</option>
+            <option value="flux-realism">Flux Realism</option>
+            <option value="flux-anime">Flux Anime</option>
+            <option value="flux-3d">Flux 3D</option>
+            <option value="turbo">Turbo (rápido)</option>
+            <option value="nano-banana">Nano-Banana</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label>Tamaño</label>
+          <select id="nxImgSize">
+            <option value="1024x1024" selected>1024 × 1024</option>
+            <option value="1280x720">1280 × 720 (16:9)</option>
+            <option value="720x1280">720 × 1280 (9:16)</option>
+            <option value="1536x1024">1536 × 1024</option>
+            <option value="512x512">512 × 512 (rápido)</option>
+          </select>
+        </div>
+      </div>
+      <div class="nx-btns">
+        <button class="nx-btn nx-btn-ghost" onclick="closeImgGen()">Cancelar</button>
+        <button class="nx-btn nx-btn-primary" id="nxImgGo" onclick="doGenerateImage()">✨ Generar</button>
+      </div>
+      <div class="nx-imgprev" id="nxImgPrev">
+        <div class="nx-empty">Tu imagen aparecerá aquí</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ USER PROFILE MODAL ═══ -->
+<div class="nx-modal" id="nxProfileModal" onclick="if(event.target===this)closeProfile()">
+  <div class="nx-card">
+    <div class="nx-head">
+      <h3>👤 Perfil del Usuario · NeuroCore-X</h3>
+      <button class="nx-close" onclick="closeProfile()">✕</button>
+    </div>
+    <div class="nx-body">
+      <div class="nx-row">
+        <label>Nombre</label>
+        <input type="text" id="prfName" placeholder="Tu nombre">
+      </div>
+      <div class="nx-row">
+        <label>Profesión</label>
+        <input type="text" id="prfProfession" placeholder="Ej: Desarrollador Full-Stack">
+      </div>
+      <div class="nx-row">
+        <label>Intereses (separados por coma)</label>
+        <input type="text" id="prfInterests" placeholder="IA, Next.js, diseño UX...">
+      </div>
+      <div class="nx-row">
+        <label>Stack preferido (separado por coma)</label>
+        <input type="text" id="prfStack" placeholder="Python, React, Tailwind, PostgreSQL...">
+      </div>
+      <div class="nx-row">
+        <label>Tono preferido</label>
+        <select id="prfTone">
+          <option value="profesional-amigable">Profesional amigable</option>
+          <option value="directo-tecnico">Directo y técnico</option>
+          <option value="casual">Casual</option>
+          <option value="academico">Académico</option>
+          <option value="creativo">Creativo</option>
+        </select>
+      </div>
+      <div class="nx-row">
+        <label>Contexto adicional</label>
+        <textarea id="prfContext" placeholder="Cualquier cosa que el agente deba saber siempre..."></textarea>
+      </div>
+      <div class="nx-btns">
+        <button class="nx-btn nx-btn-ghost" onclick="resetProfile()">Reset</button>
+        <button class="nx-btn nx-btn-primary" onclick="saveProfile()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   NeuroCore-X front-end logic (aditivo)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── ULTRA mode toggle ── */
+function toggleUltra(){
+  ultraMode = !ultraMode;
+  const btn = document.getElementById('ultraBtn');
+  if(ultraMode){
+    btn.classList.add('on');
+    btn.textContent = '⚡';
+    btn.title = 'ULTRA Mode ACTIVO (NeuroCore-X)';
+    _nxToast('⚡ ULTRA Mode activado · razonamiento profundo');
+  }else{
+    btn.classList.remove('on');
+    btn.textContent = '⚡';
+    btn.title = 'ULTRA Mode (NeuroCore-X)';
+    _nxToast('ULTRA Mode desactivado');
+  }
+}
+
+/* ── Toast minimalista ── */
+function _nxToast(text){
+  let t = document.getElementById('nxToast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'nxToast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--s1);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:12px;font-size:13px;z-index:10000;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:opacity .3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = text;
+  t.style.opacity = '1';
+  clearTimeout(t._tid);
+  t._tid = setTimeout(()=>{ t.style.opacity='0'; }, 2400);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   IMAGE GENERATOR
+   ══════════════════════════════════════════════════════════════════════ */
+const NX_STYLES = ['cinematic','photo','anime','3d','art','minimal','fantasy','cyberpunk'];
+let nxCurrentStyle = 'cinematic';
+
+function _buildStyleChips(){
+  const c = document.getElementById('nxStyleChips');
+  if(!c) return;
+  c.innerHTML = NX_STYLES.map(s =>
+    `<span class="nx-chip ${s===nxCurrentStyle?'active':''}" data-style="${s}">${s}</span>`
+  ).join('');
+  c.querySelectorAll('.nx-chip').forEach(el=>{
+    el.onclick = () => {
+      nxCurrentStyle = el.dataset.style;
+      c.querySelectorAll('.nx-chip').forEach(x=>x.classList.remove('active'));
+      el.classList.add('active');
+    };
+  });
+}
+
+function openImgGen(){
+  _buildStyleChips();
+  document.getElementById('nxImgModal').classList.add('open');
+  setTimeout(()=>document.getElementById('nxImgPrompt').focus(), 100);
+}
+function closeImgGen(){
+  document.getElementById('nxImgModal').classList.remove('open');
+}
+
+async function doGenerateImage(){
+  const prompt = document.getElementById('nxImgPrompt').value.trim();
+  if(!prompt){ _nxToast('Escribe un prompt primero'); return; }
+  const model = document.getElementById('nxImgModel').value;
+  const [w,h] = document.getElementById('nxImgSize').value.split('x').map(Number);
+  const btn = document.getElementById('nxImgGo');
+  const prev = document.getElementById('nxImgPrev');
+  btn.disabled = true; btn.textContent = 'Generando...';
+  prev.innerHTML = '<div class="nx-spinner"></div>';
+
+  try{
+    const r = await fetch(API + '/api/image/generate', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({prompt, model, style:nxCurrentStyle, width:w, height:h})
+    });
+    const d = await r.json();
+    if(d.success && d.url){
+      prev.innerHTML = `<img src="${d.url}" alt="generated" onerror="this.parentNode.innerHTML='<div class=nx-empty>Error cargando imagen</div>'">`;
+      // Inyectar en el chat como mensaje del bot
+      const md = `🎨 **Imagen generada** (${d.provider} · ${d.model})\n\n![imagen](${d.url})\n\n**Prompt:** \`${(d.prompt||prompt).slice(0,200)}\``;
+      if(typeof addMsg === 'function'){
+        addMsg(md, 'bot', 'NeuroCore-X Image', ['image','design']);
+      }
+      _nxToast('✨ Imagen generada');
+    }else{
+      prev.innerHTML = `<div class="nx-empty">⚠️ ${d.error || 'Error'}</div>`;
+    }
+  }catch(e){
+    prev.innerHTML = `<div class="nx-empty">⚠️ ${e.message}</div>`;
+  }finally{
+    btn.disabled = false; btn.textContent = '✨ Generar';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   USER PROFILE
+   ══════════════════════════════════════════════════════════════════════ */
+async function openProfile(){
+  document.getElementById('nxProfileModal').classList.add('open');
+  try{
+    const sid = (typeof sid !== 'undefined' ? sid : 'x');
+    const r = await fetch(API + '/api/profile?sid=' + encodeURIComponent(sid));
+    const d = await r.json();
+    if(d.success && d.profile){
+      const p = d.profile;
+      document.getElementById('prfName').value        = p.name || '';
+      document.getElementById('prfProfession').value  = p.profession || '';
+      document.getElementById('prfInterests').value   = (p.interests||[]).join(', ');
+      document.getElementById('prfStack').value       = (p.preferred_stack||[]).join(', ');
+      document.getElementById('prfTone').value        = p.tone || 'profesional-amigable';
+      document.getElementById('prfContext').value     = p.custom_context || '';
+    }
+  }catch(e){ console.warn('profile load', e); }
+}
+function closeProfile(){ document.getElementById('nxProfileModal').classList.remove('open'); }
+
+async function saveProfile(){
+  const sid = (typeof sid !== 'undefined' ? sid : 'x');
+  const body = {
+    sid,
+    profile: {
+      name:            document.getElementById('prfName').value.trim(),
+      profession:      document.getElementById('prfProfession').value.trim(),
+      interests:       document.getElementById('prfInterests').value.split(',').map(s=>s.trim()).filter(Boolean),
+      preferred_stack: document.getElementById('prfStack').value.split(',').map(s=>s.trim()).filter(Boolean),
+      tone:            document.getElementById('prfTone').value,
+      custom_context:  document.getElementById('prfContext').value.trim(),
+    }
+  };
+  try{
+    const r = await fetch(API + '/api/profile', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if(d.success){
+      _nxToast('✓ Perfil guardado');
+      closeProfile();
+    }else{
+      _nxToast('⚠️ ' + (d.error||'Error'));
+    }
+  }catch(e){ _nxToast('⚠️ ' + e.message); }
+}
+
+async function resetProfile(){
+  if(!confirm('¿Resetear tu perfil?')) return;
+  const sid = (typeof sid !== 'undefined' ? sid : 'x');
+  try{
+    await fetch(API + '/api/profile?sid=' + encodeURIComponent(sid), {method:'DELETE'});
+    ['prfName','prfProfession','prfInterests','prfStack','prfContext']
+      .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('prfTone').value = 'profesional-amigable';
+    _nxToast('Perfil reseteado');
+  }catch(e){ _nxToast('⚠️ ' + e.message); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Keyboard shortcut: Ctrl+Shift+U → ULTRA toggle
+   ══════════════════════════════════════════════════════════════════════ */
+document.addEventListener('keydown', (ev) => {
+  if((ev.ctrlKey||ev.metaKey) && ev.shiftKey && ev.key.toLowerCase()==='u'){
+    ev.preventDefault();
+    toggleUltra();
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════════════
+   Status banner: detecta si NeuroCore-X está activo
+   ══════════════════════════════════════════════════════════════════════ */
+(async function(){
+  try{
+    const r = await fetch(API + '/api/neurocore/info');
+    if(r.ok){
+      const d = await r.json();
+      console.log('%c🌟 NeuroCore-X active','color:#fbbf24;font-weight:700;font-size:13px', d);
+    }
+  }catch(e){ /* silent */ }
+})();
+
+console.log('%c⚡ NeuroCore-X UI ready · ULTRA = Ctrl+Shift+U','color:#8b5cf6;font-weight:600');
 </script>
 
 </body>
