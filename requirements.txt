@@ -1,5 +1,5 @@
 # ══════════════════════════════════════════════════════════════════════
-# DeepNova v2 Híbrido — dependencias
+# DeepNova v2 Híbrido — dependencias (optimizado para Railway <4GB)
 # ══════════════════════════════════════════════════════════════════════
 
 # Originales (DeepNova v1)
@@ -12,18 +12,16 @@ requests>=2.31.0
 pypdf>=4.0.0
 python-docx>=1.1.0
 
-# ── 🆕 v2 · M2 (persistencia dual SQLite/Postgres) ────────────────────
+# ── v2 · M2 (persistencia dual SQLite/Postgres) ────────────────────
 sqlalchemy>=2.0.0
-# Driver Postgres (opcional — se activa solo si DATABASE_URL es postgresql://)
 psycopg2-binary>=2.9.9; python_version < "3.13"
 
-# ── 🆕 v2 · M2 (embeddings semánticos, opcional) ──────────────────────
-# Si estos paquetes no se instalan, embeddings.py usa fallback hashing automáticamente
+# ── v2 · M2 (embeddings — SOLO numpy, fallback hashing) ────────────
+# ❌ sentence-transformers removido: arrastra PyTorch (~2.5GB) y excede el límite de 4GB en Railway
+# ✅ embeddings.py cae automáticamente al fallback hashing cuando no está sentence-transformers
 numpy>=1.24.0
-sentence-transformers>=2.5.0 ; python_version >= "3.9"
 
-# ── 🆕 v2 · M7 (favicon cascada cairosvg → Pillow → SVG) ──────────────
-# cairosvg requiere libcairo2 en el sistema (apt: libcairo2-dev)
-# Si no se puede instalar, favicon.py cae automáticamente a Pillow
+# ── v2 · M7 (favicon: Pillow directo, sin cairosvg) ────────────────
+# ❌ cairosvg removido: requiere libcairo2 a nivel de sistema (complica el build)
+# ✅ favicon.py cae automáticamente a Pillow
 pillow>=10.0.0
-cairosvg>=2.7.0 ; sys_platform != "win32"
