@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#6366f1">
 <title>DeepNova — God-Tier Agent</title>
+
+<!-- 🆕 M7 · Identidad visual (favicon + manifest) -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -631,6 +638,105 @@ html,body{
 .rep-card .rc-title{color:var(--text);font-weight:600;font-size:13px;margin-bottom:4px}
 .rep-card .rc-meta{color:var(--text2);font-size:11px}
 </style>
+
+<!-- 🆕 M4 · Tokens 4px + M3 · Modos premium (aditivo, no sobrescribe temas originales) -->
+<style>
+:root{
+  /* Sistema de espaciado 4px estricto (M4) */
+  --dn-s1:4px; --dn-s2:8px; --dn-s3:12px; --dn-s4:16px;
+  --dn-s5:20px; --dn-s6:24px; --dn-s8:32px; --dn-s10:40px;
+  --dn-radius-sm:8px; --dn-radius:12px; --dn-radius-lg:16px;
+  --dn-ease:cubic-bezier(.4,0,.2,1);
+  --dn-dur:200ms;
+  --dn-font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@supports(padding:max(0px)){
+  .iw{padding-bottom:max(12px, env(safe-area-inset-bottom))}
+}
+@supports(height:100dvh){
+  html,body{height:100dvh}
+}
+/* Anti-zoom input iOS */
+@media(max-width:900px){ #inp{font-size:16px!important} }
+
+/* 🆕 M3 · Selector de 12 modos (pills con color único por modo) */
+.dn-modes{
+  display:flex; gap:var(--dn-s2); flex-wrap:wrap;
+  padding:var(--dn-s2) var(--dn-s3);
+  border-bottom:1px solid var(--border);
+  background:var(--s1);
+}
+.dn-mode-pill{
+  padding:var(--dn-s1) var(--dn-s3);
+  border-radius:999px;
+  font-size:11px; font-weight:600;
+  cursor:pointer;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,0.03);
+  color:var(--text2);
+  transition:all var(--dn-dur) var(--dn-ease);
+  white-space:nowrap;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.dn-mode-pill:hover{ transform:translateY(-1px); color:var(--text) }
+.dn-mode-pill.on{ color:#fff; background:var(--mode-c, var(--p)); border-color:var(--mode-c, var(--p)); box-shadow:0 0 14px var(--mode-c, var(--p)) }
+.dn-mode-pill .dn-dot{ width:6px; height:6px; border-radius:50%; background:var(--mode-c, var(--p)) }
+
+/* 🆕 M5 · Botones de feedback en cada respuesta */
+.dn-fb-row{ display:flex; gap:6px; margin-top:6px; opacity:0; transition:opacity var(--dn-dur) }
+.msg.bot:hover .dn-fb-row{ opacity:1 }
+.dn-fb-btn{
+  padding:4px 8px; font-size:11px; border-radius:8px;
+  background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  color:var(--text2); cursor:pointer; transition:all .2s;
+}
+.dn-fb-btn:hover{ border-color:var(--p); color:var(--p) }
+.dn-fb-btn.on-up{ background:rgba(74,222,128,.15); border-color:var(--green); color:var(--green) }
+.dn-fb-btn.on-down{ background:rgba(248,113,113,.15); border-color:var(--red); color:var(--red) }
+
+/* 🆕 M2 · Drawer de conversaciones persistentes */
+.dn-conv-drawer{
+  position:fixed; top:0; right:-420px; width:400px; height:100vh;
+  background:var(--s1); border-left:1px solid var(--border);
+  z-index:2000; display:flex; flex-direction:column;
+  transition:right var(--dn-dur) var(--dn-ease);
+  box-shadow:-8px 0 28px rgba(0,0,0,.4);
+}
+.dn-conv-drawer.on{ right:0 }
+.dn-conv-head{ padding:var(--dn-s4); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between }
+.dn-conv-head h3{ font-size:14px; font-weight:700 }
+.dn-conv-close{ cursor:pointer; color:var(--text2); font-size:18px; background:none; border:none }
+.dn-conv-search{ padding:var(--dn-s3) var(--dn-s4); border-bottom:1px solid var(--border) }
+.dn-conv-search input{ width:100%; padding:8px 12px; background:var(--s2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:13px; outline:none }
+.dn-conv-search input:focus{ border-color:var(--p) }
+.dn-conv-list{ flex:1; overflow-y:auto; padding:var(--dn-s2) }
+.dn-conv-item{ padding:var(--dn-s3); border-radius:10px; cursor:pointer; transition:background .2s; margin-bottom:4px; border:1px solid transparent }
+.dn-conv-item:hover{ background:rgba(99,102,241,.06); border-color:var(--border) }
+.dn-conv-item.active{ background:rgba(99,102,241,.12); border-color:var(--p) }
+.dn-conv-item .ci-title{ font-size:13px; font-weight:600; color:var(--text); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.dn-conv-item .ci-meta{ font-size:11px; color:var(--text2); display:flex; gap:8px }
+.dn-conv-item .ci-mode{ padding:1px 6px; border-radius:6px; background:rgba(99,102,241,.12); color:var(--p); font-weight:600; font-size:10px }
+
+/* Resultados de búsqueda semántica */
+.dn-search-result{ padding:10px; border-radius:10px; background:var(--s2); border:1px solid var(--border); margin-bottom:6px; cursor:pointer; transition:all .2s }
+.dn-search-result:hover{ border-color:var(--p) }
+.dn-search-result .sr-score{ font-size:10px; color:var(--p); font-weight:700 }
+.dn-search-result .sr-content{ font-size:12px; color:var(--text2); line-height:1.5; margin-top:4px }
+
+/* Drawer overlay */
+.dn-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1999; opacity:0; pointer-events:none; transition:opacity var(--dn-dur) }
+.dn-overlay.on{ opacity:1; pointer-events:auto }
+
+/* Botón de conversaciones en el header */
+.dn-conv-btn{
+  padding:6px 10px; border-radius:10px;
+  background:rgba(99,102,241,.1); border:1px solid var(--border);
+  color:var(--p); font-size:12px; cursor:pointer; transition:all .2s;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.dn-conv-btn:hover{ background:rgba(99,102,241,.2); border-color:var(--p) }
+</style>
+
 </head>
 <body>
 
@@ -2084,6 +2190,216 @@ document.addEventListener('keydown', e => {
   });
 })();
 
+</script>
+
+<!-- 🆕 M3 · Selector de modos + M2 · Drawer de conversaciones + M5 · Feedback -->
+<script>
+(function(){
+  if (window.__deepnova_v2_loaded) return;
+  window.__deepnova_v2_loaded = true;
+
+  const SID = (()=>{ try{ let s=localStorage.getItem('dn_sid'); if(!s){ s='u_'+Math.random().toString(36).slice(2,10); localStorage.setItem('dn_sid', s); } return s; }catch(e){ return 'anon'; } })();
+  const API = {
+    modes:        ()              => fetch('/api/modes').then(r=>r.json()),
+    conversations:()              => fetch('/api/conversations?sid='+encodeURIComponent(SID)).then(r=>r.json()),
+    createConv:   (title, mode)   => fetch('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sid:SID, title, mode})}).then(r=>r.json()),
+    deleteConv:   (id)            => fetch('/api/conversations/'+id, {method:'DELETE'}).then(r=>r.json()),
+    search:       (q)             => fetch('/api/memory/search', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sid:SID, query:q, top_k:8})}).then(r=>r.json()),
+    feedback:     (vote, mid, c)  => fetch('/api/feedback', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sid:SID, vote, message_id:mid, comment:c||''})}).then(r=>r.json()),
+    health:       ()              => fetch('/api/health').then(r=>r.json()),
+  };
+
+  // ═════ M3 · Barra de modos ═════════════════════════════════════════
+  let ACTIVE_MODE = localStorage.getItem('dn_mode') || 'chat';
+  let MODE_LIST = [];
+
+  async function renderModeBar(){
+    try {
+      const data = await API.modes();
+      MODE_LIST = data.modes || [];
+      const chatHeader = document.querySelector('.ch');
+      if (!chatHeader) return;
+      let bar = document.getElementById('dnModeBar');
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'dnModeBar';
+        bar.className = 'dn-modes';
+        bar.title = 'Modos DeepNova v2 (M3)';
+        chatHeader.parentNode.insertBefore(bar, chatHeader.nextSibling);
+      }
+      bar.innerHTML = MODE_LIST.map(m=>`
+        <span class="dn-mode-pill ${m.key===ACTIVE_MODE?'on':''}" data-mode="${m.key}" style="--mode-c:${m.color}">
+          <span class="dn-dot"></span>${m.key}
+        </span>`).join('');
+      bar.querySelectorAll('.dn-mode-pill').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          ACTIVE_MODE = el.dataset.mode;
+          try{ localStorage.setItem('dn_mode', ACTIVE_MODE); }catch(e){}
+          bar.querySelectorAll('.dn-mode-pill').forEach(x=>x.classList.toggle('on', x.dataset.mode===ACTIVE_MODE));
+          window.dispatchEvent(new CustomEvent('dn-mode-change', {detail:{mode:ACTIVE_MODE}}));
+        });
+      });
+    } catch (e) { console.warn('[dn-v2] modes error', e); }
+  }
+
+  window.deepnovaGetMode = () => ACTIVE_MODE;
+
+  // ═════ M5 · Botones de feedback en respuestas del bot ═════════════
+  function injectFeedback(msgEl){
+    if (msgEl.querySelector('.dn-fb-row')) return;
+    const row = document.createElement('div');
+    row.className = 'dn-fb-row';
+    row.innerHTML = `
+      <button class="dn-fb-btn" data-vote="1" title="Útil">👍</button>
+      <button class="dn-fb-btn" data-vote="-1" title="No útil">👎</button>
+      <button class="dn-fb-btn" data-vote="copy" title="Copiar">📋</button>
+    `;
+    msgEl.appendChild(row);
+    row.addEventListener('click', async (e)=>{
+      const btn = e.target.closest('.dn-fb-btn'); if (!btn) return;
+      const v = btn.dataset.vote;
+      if (v === 'copy') {
+        const bub = msgEl.querySelector('.bubble');
+        if (bub) { try { await navigator.clipboard.writeText(bub.innerText); btn.style.color='var(--green)'; } catch(err){} }
+        API.feedback(0, null, 'copied').catch(()=>{});
+        return;
+      }
+      const vote = parseInt(v, 10);
+      row.querySelectorAll('.dn-fb-btn').forEach(b=>{b.classList.remove('on-up','on-down')});
+      btn.classList.add(vote>0?'on-up':'on-down');
+      let comment = '';
+      if (vote < 0) { comment = prompt('¿Qué mejorarías? (opcional)') || ''; }
+      API.feedback(vote, null, comment).catch(()=>{});
+    });
+  }
+
+  const fbObserver = new MutationObserver((muts)=>{
+    for (const m of muts) {
+      m.addedNodes.forEach(n=>{
+        if (n.nodeType !== 1) return;
+        if (n.classList && n.classList.contains('msg') && n.classList.contains('bot')) {
+          injectFeedback(n);
+        }
+        n.querySelectorAll && n.querySelectorAll('.msg.bot').forEach(injectFeedback);
+      });
+    }
+  });
+  function startFbObserver(){
+    const msgs = document.querySelector('.msgs');
+    if (msgs) { fbObserver.observe(msgs, {childList:true, subtree:false}); msgs.querySelectorAll('.msg.bot').forEach(injectFeedback); }
+  }
+
+  // ═════ M2 · Drawer de conversaciones + búsqueda semántica ══════════
+  function buildDrawer(){
+    if (document.getElementById('dnConvDrawer')) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'dn-overlay';
+    overlay.id = 'dnOverlay';
+    document.body.appendChild(overlay);
+
+    const d = document.createElement('aside');
+    d.className = 'dn-conv-drawer';
+    d.id = 'dnConvDrawer';
+    d.innerHTML = `
+      <div class="dn-conv-head">
+        <h3>💬 Conversaciones · M2</h3>
+        <button class="dn-conv-close" id="dnConvClose">✕</button>
+      </div>
+      <div class="dn-conv-search">
+        <input id="dnConvSearch" type="text" placeholder="🔍 Búsqueda semántica cross-conversation...">
+      </div>
+      <div class="dn-conv-list" id="dnConvList"></div>
+    `;
+    document.body.appendChild(d);
+
+    overlay.addEventListener('click', closeDrawer);
+    document.getElementById('dnConvClose').addEventListener('click', closeDrawer);
+
+    let t=null;
+    document.getElementById('dnConvSearch').addEventListener('input', (e)=>{
+      clearTimeout(t);
+      const q = e.target.value.trim();
+      t = setTimeout(()=>{ q.length>=3 ? doSearch(q) : loadConversations(); }, 300);
+    });
+  }
+  function openDrawer(){ buildDrawer(); document.getElementById('dnConvDrawer').classList.add('on'); document.getElementById('dnOverlay').classList.add('on'); loadConversations(); }
+  function closeDrawer(){ const d=document.getElementById('dnConvDrawer'); const o=document.getElementById('dnOverlay'); if(d)d.classList.remove('on'); if(o)o.classList.remove('on'); }
+
+  async function loadConversations(){
+    const list = document.getElementById('dnConvList'); if(!list) return;
+    list.innerHTML = '<div style="padding:12px;color:var(--text2);font-size:12px">Cargando...</div>';
+    try {
+      const data = await API.conversations();
+      const convs = data.conversations || [];
+      if (!convs.length) {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2);font-size:12px">Sin conversaciones todavía.<br><button class="dn-conv-btn" id="dnNewConv" style="margin-top:10px">➕ Crear la primera</button></div>';
+      } else {
+        list.innerHTML = convs.map(c=>`
+          <div class="dn-conv-item" data-id="${c.id}">
+            <div class="ci-title">${escapeHtml(c.title||'Sin título')}</div>
+            <div class="ci-meta"><span class="ci-mode">${c.mode||'chat'}</span><span>${new Date(c.updated_at).toLocaleDateString()}</span></div>
+          </div>`).join('') +
+          '<button class="dn-conv-btn" id="dnNewConv" style="width:100%;margin-top:10px;justify-content:center">➕ Nueva</button>';
+      }
+      const btn = document.getElementById('dnNewConv');
+      if (btn) btn.addEventListener('click', async ()=>{
+        const title = prompt('Título de la conversación:') || 'Nueva conversación';
+        await API.createConv(title, ACTIVE_MODE);
+        loadConversations();
+      });
+    } catch (e) {
+      list.innerHTML = '<div style="padding:12px;color:var(--red);font-size:12px">Error: '+ e.message +'</div>';
+    }
+  }
+
+  async function doSearch(q){
+    const list = document.getElementById('dnConvList'); if(!list) return;
+    list.innerHTML = '<div style="padding:12px;color:var(--text2);font-size:12px">Buscando «'+escapeHtml(q)+'»...</div>';
+    try {
+      const data = await API.search(q);
+      const r = data.results || [];
+      if (!r.length) { list.innerHTML = '<div style="padding:12px;color:var(--text2);font-size:12px">Sin resultados. (Motor: '+(data.engine||'n/a')+')</div>'; return; }
+      list.innerHTML = '<div style="padding:4px 8px;font-size:10px;color:var(--p);text-transform:uppercase;font-weight:700">'+r.length+' resultados · '+(data.engine||'')+'</div>' +
+        r.map(item=>`
+          <div class="dn-search-result">
+            <div class="sr-score">Score ${item.score} · ${escapeHtml(item.title||'')}</div>
+            <div class="sr-content">${escapeHtml((item.content||'').slice(0,240))}</div>
+          </div>`).join('');
+    } catch(e){ list.innerHTML = '<div style="padding:12px;color:var(--red);font-size:12px">Error: '+ e.message +'</div>'; }
+  }
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c])); }
+
+  // ═════ Botón en header para abrir drawer ═════════════════════════════
+  function injectHeaderButton(){
+    const ha = document.querySelector('.ch .ha');
+    if (!ha || document.getElementById('dnConvOpen')) return;
+    const btn = document.createElement('button');
+    btn.id = 'dnConvOpen';
+    btn.className = 'dn-conv-btn';
+    btn.title = 'Conversaciones persistentes + búsqueda semántica (M2)';
+    btn.innerHTML = '💬 <span style="font-size:11px">M2</span>';
+    btn.addEventListener('click', openDrawer);
+    ha.insertBefore(btn, ha.firstChild);
+  }
+
+  // ═════ Inicialización ═══════════════════════════════════════════════
+  function init(){
+    renderModeBar();
+    startFbObserver();
+    injectHeaderButton();
+    API.health().then(h=>{
+      console.log('[DeepNova v2] health', h);
+    }).catch(()=>{});
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
 </script>
 
 </body>
