@@ -1,12 +1,28 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, g, make_response
 from flask_cors import CORS
 import groq, os, re, time, json, requests, base64
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, OrderedDict
 from datetime import datetime
 from urllib.parse import urlparse
 import io
 import subprocess
 import tempfile
+import uuid
+import logging
+import threading
+
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v3 PREMIUM — Logging estructurado
+# ══════════════════════════════════════════
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO"),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("deepnova")
+
+# Versión premium
+DEEPNOVA_VERSION = "3.0-premium"
+DEEPNOVA_BUILD = datetime.utcnow().strftime("%Y%m%d")
 
 # ══════════════════════════════════════════
 # 🆕 DEEPNOVA v2 HÍBRIDO — Módulos avanzados
@@ -24,7 +40,39 @@ except Exception as _e:
     _DN2_OK = False
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, expose_headers=["X-Request-Id", "X-DeepNova-Version", "X-Elapsed-Ms"])
+
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v3 · Middleware premium
+#   - X-Request-Id por petición
+#   - X-Elapsed-Ms para latencia
+#   - Logging estructurado
+#   - Headers de seguridad suaves
+# ══════════════════════════════════════════
+@app.before_request
+def _dn_before():
+    g.request_id = request.headers.get("X-Request-Id") or uuid.uuid4().hex[:12]
+    g.t0 = time.perf_counter()
+
+@app.after_request
+def _dn_after(resp):
+    try:
+        elapsed_ms = int((time.perf_counter() - getattr(g, "t0", time.perf_counter())) * 1000)
+        resp.headers["X-Request-Id"]      = getattr(g, "request_id", "-")
+        resp.headers["X-Elapsed-Ms"]      = str(elapsed_ms)
+        resp.headers["X-DeepNova-Version"] = DEEPNOVA_VERSION
+        # Headers de seguridad suaves (no rompen nada)
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        if request.path not in ("/", "/health"):
+            logger.info(
+                "req=%s path=%s status=%s ms=%s",
+                getattr(g, "request_id", "-"), request.path, resp.status_code, elapsed_ms
+            )
+    except Exception:
+        pass
+    return resp
 
 # Registrar favicons M7 (servicio de /favicon.svg, /icon-*.png, /site.webmanifest)
 if _favicon is not None:
@@ -1135,7 +1183,12 @@ def process_command(msg, sid):
 
 @app.route("/")
 def home():
-    return open("index.html", encoding="utf-8").read()
+    # 🆕 v3 · Cache-Control y ETag básicos para la SPA
+    html = open("index.html", encoding="utf-8").read()
+    resp = make_response(html)
+    resp.headers["Content-Type"] = "text/html; charset=utf-8"
+    resp.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return resp
 
 @app.route("/health")
 def health():
@@ -2260,9 +2313,263 @@ def api_health():
     return jsonify(info)
 
 # ══════════════════════════════════════════
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v3 PREMIUM — Features de producto de clase mundial
+# ══════════════════════════════════════════
+
+# ──────────────────────────────────────────────────────────────────
+# PROMPT LIBRARY — biblioteca curada de prompts por categoría
+# ──────────────────────────────────────────────────────────────────
+PROMPT_LIBRARY = {
+    "productivity": [
+        {"title": "Resumen ejecutivo",      "icon": "📋", "prompt": "Resúmeme el siguiente contenido en 5 puntos accionables:"},
+        {"title": "Email profesional",       "icon": "✉️", "prompt": "Redacta un email profesional claro y directo sobre:"},
+        {"title": "Plan de proyecto",        "icon": "🗓️", "prompt": "Genera un plan de proyecto detallado con fases, hitos y entregables para:"},
+        {"title": "Agenda de reunión",       "icon": "📅", "prompt": "Crea una agenda de reunión de 30 minutos con objetivos claros para:"},
+    ],
+    "coding": [
+        {"title": "API REST en Python",      "icon": "🐍", "prompt": "Crea una API REST completa en FastAPI con autenticación JWT, validación Pydantic y documentación Swagger para:"},
+        {"title": "Componente React premium","icon": "⚛️", "prompt": "Crea un componente React con TypeScript, Tailwind y animaciones Framer Motion para:"},
+        {"title": "Debug paso a paso",       "icon": "🐞", "prompt": "Analiza este código, encuentra el bug y explica la solución paso a paso:"},
+        {"title": "Refactor limpio",         "icon": "✨", "prompt": "Refactoriza este código aplicando principios SOLID y patrones de diseño:"},
+        {"title": "Tests unitarios",         "icon": "✅", "prompt": "Genera tests unitarios exhaustivos con pytest y mocks para:"},
+    ],
+    "design": [
+        {"title": "Landing page SaaS",       "icon": "🌐", "prompt": "Diseña una landing page SaaS premium con hero, features, pricing y CTA en HTML/CSS/JS moderno para:"},
+        {"title": "Dashboard de analytics",  "icon": "📊", "prompt": "Crea un dashboard de analytics con KPIs, gráficas CSS y tabla en dark mode para:"},
+        {"title": "Sistema de diseño",       "icon": "🎨", "prompt": "Define un sistema de diseño completo: colores, tipografía, espaciado y componentes para:"},
+    ],
+    "content": [
+        {"title": "Artículo SEO de blog",    "icon": "📝", "prompt": "Escribe un artículo SEO de 800 palabras con H1/H2/H3, meta descripción y keywords para:"},
+        {"title": "Tweet viral",             "icon": "🐦", "prompt": "Crea un hilo de 5 tweets con gancho fuerte y CTA sobre:"},
+        {"title": "Descripción de producto", "icon": "🛍️", "prompt": "Escribe una descripción de producto persuasiva con beneficios y prueba social para:"},
+    ],
+    "analysis": [
+        {"title": "Análisis FODA",           "icon": "🔍", "prompt": "Realiza un análisis FODA completo (Fortalezas, Oportunidades, Debilidades, Amenazas) de:"},
+        {"title": "Benchmark competitivo",   "icon": "⚔️", "prompt": "Haz un benchmark competitivo con tabla comparativa y recomendaciones para:"},
+        {"title": "Plan de investigación",   "icon": "🔬", "prompt": "Diseña un plan de investigación con hipótesis, metodología y métricas para:"},
+    ],
+    "creative": [
+        {"title": "Brainstorm de ideas",     "icon": "💡", "prompt": "Dame 10 ideas innovadoras y creativas, de las más salvajes a las más prácticas, sobre:"},
+        {"title": "Historia corta",          "icon": "📖", "prompt": "Escribe una historia corta original con giro inesperado sobre:"},
+        {"title": "Nombre de marca",         "icon": "🏷️", "prompt": "Genera 10 nombres de marca memorables, disponibles y con significado para:"},
+    ],
+}
+
+@app.route("/api/prompts", methods=["GET"])
+def api_prompts():
+    """Biblioteca de prompts premium organizados por categoría."""
+    cat = request.args.get("category")
+    if cat:
+        return jsonify({"category": cat, "prompts": PROMPT_LIBRARY.get(cat, [])})
+    return jsonify({
+        "categories": list(PROMPT_LIBRARY.keys()),
+        "library":    PROMPT_LIBRARY,
+        "total":      sum(len(v) for v in PROMPT_LIBRARY.values()),
+    })
+
+# ──────────────────────────────────────────────────────────────────
+# QUICK ACTIONS — acciones rápidas para command palette
+# ──────────────────────────────────────────────────────────────────
+QUICK_ACTIONS = [
+    {"id": "new_chat",    "title": "Nueva conversación",     "icon": "➕", "shortcut": "⌘+N",     "category": "navegación"},
+    {"id": "clear_chat",  "title": "Limpiar chat actual",    "icon": "🗑️", "shortcut": "⌘+⇧+K",  "category": "navegación"},
+    {"id": "toggle_multi","title": "Alternar Multi-IA",      "icon": "🧠", "shortcut": "⌘+M",     "category": "ajustes"},
+    {"id": "open_docs",   "title": "Analizar documentos",    "icon": "📄", "shortcut": "⌘+D",     "category": "herramientas"},
+    {"id": "open_app",    "title": "App Builder",            "icon": "🏗️", "shortcut": "⌘+B",     "category": "herramientas"},
+    {"id": "open_report", "title": "Generar informe",        "icon": "📊", "shortcut": "⌘+R",     "category": "herramientas"},
+    {"id": "open_flow",   "title": "Workflows",              "icon": "⚙️", "shortcut": "⌘+W",     "category": "herramientas"},
+    {"id": "open_int",    "title": "Integraciones",          "icon": "🔌", "shortcut": "⌘+I",     "category": "herramientas"},
+    {"id": "export_json", "title": "Exportar historial JSON","icon": "💾", "shortcut": "⌘+E",     "category": "datos"},
+    {"id": "toggle_voice","title": "Alternar voz de salida", "icon": "🔊", "shortcut": "⌘+⇧+V",  "category": "voz"},
+    {"id": "mic_on",      "title": "Iniciar dictado",        "icon": "🎤", "shortcut": "⌘+⇧+M",  "category": "voz"},
+    {"id": "theme_dark",  "title": "Tema Dark",              "icon": "🌑", "shortcut": "",         "category": "tema"},
+    {"id": "theme_cyber", "title": "Tema Cyberpunk",         "icon": "🌆", "shortcut": "",         "category": "tema"},
+    {"id": "theme_ocean", "title": "Tema Ocean",             "icon": "🌊", "shortcut": "",         "category": "tema"},
+    {"id": "theme_forest","title": "Tema Forest",            "icon": "🌲", "shortcut": "",         "category": "tema"},
+    {"id": "theme_sunset","title": "Tema Sunset",            "icon": "🌇", "shortcut": "",         "category": "tema"},
+    {"id": "theme_light", "title": "Tema Light",             "icon": "☀️", "shortcut": "",         "category": "tema"},
+    {"id": "help",        "title": "Atajos de teclado",       "icon": "⌨️", "shortcut": "?",        "category": "ayuda"},
+]
+
+@app.route("/api/quick-actions", methods=["GET"])
+def api_quick_actions():
+    return jsonify({"actions": QUICK_ACTIONS, "total": len(QUICK_ACTIONS)})
+
+# ──────────────────────────────────────────────────────────────────
+# USAGE / MONITORING — métricas ligeras in-memory
+# ──────────────────────────────────────────────────────────────────
+_usage = {
+    "started_at":   datetime.utcnow().isoformat() + "Z",
+    "requests":     0,
+    "errors":       0,
+    "by_endpoint":  defaultdict(int),
+    "tokens_in":    0,
+    "tokens_out":   0,
+    "latency_sum":  0.0,
+    "latency_cnt":  0,
+}
+_usage_lock = threading.Lock()
+
+@app.before_request
+def _dn_count_req():
+    try:
+        with _usage_lock:
+            _usage["requests"] += 1
+            _usage["by_endpoint"][request.path] += 1
+    except Exception:
+        pass
+
+@app.route("/api/usage", methods=["GET"])
+def api_usage():
+    with _usage_lock:
+        avg = _usage["latency_sum"] / _usage["latency_cnt"] if _usage["latency_cnt"] else 0
+        return jsonify({
+            "version":       DEEPNOVA_VERSION,
+            "build":         DEEPNOVA_BUILD,
+            "started_at":    _usage["started_at"],
+            "requests":      _usage["requests"],
+            "errors":        _usage["errors"],
+            "avg_latency_ms": round(avg * 1000, 1),
+            "top_endpoints": dict(Counter(_usage["by_endpoint"]).most_common(8)),
+            "conversations": len(convs),
+            "sessions":      len(permanent_memory),
+            "knowledge":     len(knowledge_base.get("entries", [])),
+        })
+
+# ──────────────────────────────────────────────────────────────────
+# THEME PRESETS — metadatos de los temas disponibles
+# ──────────────────────────────────────────────────────────────────
+THEME_PRESETS = [
+    {"key": "",       "name": "Dark",       "icon": "🌑", "primary": "#6366f1", "desc": "Premium dark por defecto"},
+    {"key": "cyber",  "name": "Cyberpunk",  "icon": "🌆", "primary": "#ff00ff", "desc": "Neon magenta futurista"},
+    {"key": "ocean",  "name": "Ocean",      "icon": "🌊", "primary": "#0ea5e9", "desc": "Azul profundo oceánico"},
+    {"key": "forest", "name": "Forest",     "icon": "🌲", "primary": "#22c55e", "desc": "Verde natural concentrado"},
+    {"key": "sunset", "name": "Sunset",     "icon": "🌇", "primary": "#f97316", "desc": "Naranjas y ámbares cálidos"},
+    {"key": "light",  "name": "Light",      "icon": "☀️", "primary": "#6366f1", "desc": "Tema claro minimalista"},
+    {"key": "pink",   "name": "Pink",       "icon": "🌸", "primary": "#ec4899", "desc": "Rosa vibrante elegante"},
+    {"key": "gold",   "name": "Gold",       "icon": "🥇", "primary": "#d97706", "desc": "Dorado sofisticado"},
+    {"key": "ice",    "name": "Ice",        "icon": "❄️", "primary": "#67e8f9", "desc": "Hielo cristalino premium"},
+    {"key": "fire",   "name": "Fire",       "icon": "🔥", "primary": "#ef4444", "desc": "Rojo intenso energético"},
+]
+
+@app.route("/api/themes", methods=["GET"])
+def api_themes():
+    return jsonify({"themes": THEME_PRESETS, "total": len(THEME_PRESETS)})
+
+# ──────────────────────────────────────────────────────────────────
+# SUGGESTIONS — sugerencias dinámicas contextuales
+# ──────────────────────────────────────────────────────────────────
+CONTEXTUAL_SUGGESTIONS = {
+    "empty": [
+        {"icon": "💡", "text": "Idea innovadora de startup IA 2026"},
+        {"icon": "💻", "text": "Crea una API REST en Python con FastAPI"},
+        {"icon": "🌐", "text": "Busca tendencias IA 2026"},
+        {"icon": "🥊", "text": "/debate Python vs JavaScript"},
+        {"icon": "🤖", "text": "/agente Crea un sitio web profesional"},
+        {"icon": "🎨", "text": "Diseña un dashboard premium con dark mode"},
+        {"icon": "⚡", "text": "/ejecutar Calcula los primeros 20 números primos"},
+        {"icon": "📄", "text": "Analizar un documento PDF"},
+        {"icon": "📊", "text": "Genera un informe ejecutivo estructurado"},
+    ],
+    "code": [
+        {"icon": "🐛", "text": "Debug este código paso a paso"},
+        {"icon": "✨", "text": "Refactoriza aplicando SOLID"},
+        {"icon": "✅", "text": "Genera tests unitarios"},
+        {"icon": "📖", "text": "Documenta este código con JSDoc"},
+    ],
+    "design": [
+        {"icon": "📱", "text": "Hazlo 100% responsive"},
+        {"icon": "🌙", "text": "Conviértelo a dark mode premium"},
+        {"icon": "✨", "text": "Añade micro-animaciones sutiles"},
+    ],
+    "analyze": [
+        {"icon": "📊", "text": "Profundiza en los datos más críticos"},
+        {"icon": "🔮", "text": "Proyecta los siguientes 3 meses"},
+        {"icon": "🎯", "text": "Identifica el principal riesgo"},
+    ],
+}
+
+@app.route("/api/suggestions", methods=["GET", "POST"])
+def api_suggestions():
+    context = (request.args.get("context") or "empty").lower()
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        context = (data.get("context") or context).lower()
+    sugs = CONTEXTUAL_SUGGESTIONS.get(context, CONTEXTUAL_SUGGESTIONS["empty"])
+    return jsonify({"context": context, "suggestions": sugs})
+
+# ──────────────────────────────────────────────────────────────────
+# KEYBOARD SHORTCUTS — catálogo formal
+# ──────────────────────────────────────────────────────────────────
+SHORTCUTS = [
+    {"keys": ["⌘", "K"],        "desc": "Abrir paleta de comandos"},
+    {"keys": ["⌘", "/"],        "desc": "Buscar en la app"},
+    {"keys": ["⌘", "N"],        "desc": "Nueva conversación"},
+    {"keys": ["⌘", "⇧", "K"],   "desc": "Limpiar chat"},
+    {"keys": ["⌘", "M"],        "desc": "Alternar Multi-IA"},
+    {"keys": ["⌘", "D"],        "desc": "Abrir Documentos"},
+    {"keys": ["⌘", "B"],        "desc": "Abrir App Builder"},
+    {"keys": ["⌘", "R"],        "desc": "Abrir Informes"},
+    {"keys": ["⌘", "W"],        "desc": "Abrir Workflows"},
+    {"keys": ["⌘", "I"],        "desc": "Abrir Integraciones"},
+    {"keys": ["⌘", "E"],        "desc": "Exportar historial"},
+    {"keys": ["⌘", "⇧", "V"],   "desc": "Alternar voz"},
+    {"keys": ["⌘", "⇧", "M"],   "desc": "Dictado por voz"},
+    {"keys": ["?"],              "desc": "Mostrar ayuda de atajos"},
+    {"keys": ["Esc"],            "desc": "Cerrar modal o panel"},
+    {"keys": ["Enter"],          "desc": "Enviar mensaje"},
+    {"keys": ["⇧", "Enter"],     "desc": "Nueva línea"},
+]
+
+@app.route("/api/shortcuts", methods=["GET"])
+def api_shortcuts():
+    return jsonify({"shortcuts": SHORTCUTS, "total": len(SHORTCUTS)})
+
+# ──────────────────────────────────────────────────────────────────
+# PING rápido con latencia
+# ──────────────────────────────────────────────────────────────────
+@app.route("/api/ping")
+def api_ping():
+    return jsonify({"pong": True, "ts": time.time(), "version": DEEPNOVA_VERSION})
+
+# ──────────────────────────────────────────────────────────────────
+# ERROR HANDLERS — respuestas JSON uniformes
+# ──────────────────────────────────────────────────────────────────
+@app.errorhandler(404)
+def _e404(e):
+    if request.path.startswith("/api/") or request.headers.get("Accept", "").find("json") >= 0:
+        return jsonify({
+            "error": "not_found",
+            "path": request.path,
+            "request_id": getattr(g, "request_id", "-")
+        }), 404
+    return e, 404
+
+@app.errorhandler(500)
+def _e500(e):
+    try:
+        with _usage_lock:
+            _usage["errors"] += 1
+    except Exception:
+        pass
+    logger.exception("500 error path=%s request_id=%s", request.path, getattr(g, "request_id", "-"))
+    return jsonify({
+        "error": "internal",
+        "request_id": getattr(g, "request_id", "-"),
+        "message": "Error interno. Nuestro equipo ha sido notificado."
+    }), 500
+
+@app.errorhandler(429)
+def _e429(e):
+    return jsonify({"error": "rate_limit", "retry_after": 60}), 429
+
+
+
 # 🚀 ARRANQUE
 # ══════════════════════════════════════════
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
+    logger.info("🚀 DeepNova %s build=%s starting on port %s", DEEPNOVA_VERSION, DEEPNOVA_BUILD, port)
     app.run(host="0.0.0.0", port=port)
