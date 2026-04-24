@@ -39,6 +39,25 @@ except Exception as _e:
     _reasoning = _db = _emb = _favicon = None
     _DN2_OK = False
 
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v4 ULTRA — NeuroCore-X (módulos aditivos)
+#   Motor de razonamiento avanzado + generación de imágenes + perfil de usuario
+#   100% aditivo: no rompe ninguna funcionalidad existente.
+# ══════════════════════════════════════════
+try:
+    import neurocore_x       as _nx
+    import image_gen         as _imggen
+    import user_profile      as _uprof
+    import neurocore_routes  as _nxroutes
+    _NX_OK = True
+    print("[neurocore-x] ✓ módulos cargados")
+except Exception as _e:
+    print(f"[neurocore-x] módulos no disponibles: {_e}")
+    _nx = _imggen = _uprof = _nxroutes = None
+    _NX_OK = False
+
+DEEPNOVA_VERSION = "4.0-ultra-neurocore-x"  # override a v4 Ultra
+
 app = Flask(__name__)
 CORS(app, expose_headers=["X-Request-Id", "X-DeepNova-Version", "X-Elapsed-Ms"])
 
@@ -1194,11 +1213,22 @@ def home():
 def health():
     return jsonify({
         "status":    "ok",
-        "version":   "DeepNova 2.0",
+        "version":   DEEPNOVA_VERSION,
+        "build":     DEEPNOVA_BUILD,
         "models":    list(MODELS.keys()),
         "sessions":  len(convs),
         "memories":  len(permanent_memory),
-        "sandbox":   "Python executor active"
+        "sandbox":   "Python executor active",
+        "neurocore_x": _NX_OK,
+        "features":  {
+            "ultra_mode":      _NX_OK,
+            "image_gen":       _NX_OK and (_imggen is not None),
+            "user_profile":    _NX_OK and (_uprof is not None),
+            "streaming":       _NX_OK,
+            "reasoning_v2":    _reasoning is not None,
+            "db_persistence":  _db is not None,
+            "semantic_search": _emb is not None,
+        },
     })
 
 @app.route("/chat", methods=["POST"])
@@ -1211,6 +1241,7 @@ def chat():
     msg   = data.get("message", "").strip()
     sid   = data.get("session_id", "x")
     multi = data.get("multi_model", False)
+    ultra = bool(data.get("ultra", False))  # 🆕 ULTRA mode flag
 
     if not msg:
         return jsonify({"response": "Escribe algo 😊"}), 400
@@ -1218,6 +1249,64 @@ def chat():
     safe, reason = is_safe(msg)
     if not safe:
         return jsonify({"response": f"⚠️ {reason}"}), 400
+
+    # ═══ 🆕 NEUROCORE-X ULTRA MODE (aditivo, short-circuit) ═══
+    if ultra and _NX_OK and _nx is not None:
+        try:
+            mem_ctx = get_memory_prompt(sid)
+            profile_block = ""
+            if _uprof is not None:
+                try:
+                    profile_block = _uprof.profile_to_system_prompt(_uprof.get_profile(sid))
+                except Exception:
+                    pass
+            result = _nx.ultra_reason(
+                query=msg,
+                llm_call=_llm_call,
+                fast_llm=_fast_llm,
+                base_system=SYSTEM_BASE + profile_block,
+                context="",
+                memory=mem_ctx,
+            )
+            extract_memory(sid, msg)
+            save_history(sid, msg, result["answer"], "NeuroCore-X-ULTRA", ["ultra", "reason"])
+            auto_learn(sid, msg, result["answer"])
+            return jsonify({
+                "response":   result["answer"],
+                "model_used": result["engine"],
+                "modes_used": ["ultra", "reason", "plan", "critique"],
+                "elapsed_ms": result["elapsed_ms"],
+                "ultra":      True,
+            })
+        except Exception as _ult_err:
+            logger.warning("ULTRA fallback a modo normal: %s", _ult_err)
+            # cae a flujo normal
+
+    # ═══ 🆕 Auto-image detection (si el mensaje pide imagen) ═══
+    _img_triggers = ["genérame una imagen", "genera una imagen", "crea una imagen",
+                     "dibújame", "ilustra", "imagen de", "/imagen", "/image"]
+    if _NX_OK and _imggen is not None and any(t in msg.lower() for t in _img_triggers):
+        try:
+            # Extraer prompt visual del mensaje
+            img_prompt = msg
+            for t in _img_triggers:
+                img_prompt = re.sub(re.escape(t), "", img_prompt, flags=re.IGNORECASE)
+            img_prompt = img_prompt.strip(" :,-.¡!¿?") or msg
+            img_result = _imggen.generate_image(img_prompt, style="cinematic")
+            if img_result.get("success"):
+                md = (f"🎨 **Imagen generada con NeuroCore-X**\n\n"
+                      f"![imagen]({img_result['url']})\n\n"
+                      f"**Prompt final:** `{img_result.get('prompt', img_prompt)[:200]}`\n"
+                      f"**Proveedor:** {img_result.get('provider')} · **Modelo:** {img_result.get('model')}")
+                save_history(sid, msg, md, "NeuroCore-X-Image", ["image"])
+                return jsonify({
+                    "response":   md,
+                    "model_used": "NeuroCore-X Image",
+                    "modes_used": ["image", "design"],
+                    "image":      img_result,
+                })
+        except Exception as _img_err:
+            logger.warning("Image-gen fallback: %s", _img_err)
 
     # Comandos rápidos
     cmd, is_cmd, cmd_modes = process_command(msg, sid)
@@ -2564,6 +2653,25 @@ def _e500(e):
 def _e429(e):
     return jsonify({"error": "rate_limit", "retry_after": 60}), 429
 
+
+
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v4 ULTRA — NeuroCore-X routes registration
+# Se registra AQUÍ porque requiere _llm_call, _fast_llm, SYSTEM_BASE,
+# get_memory_prompt ya definidos. Es 100% aditivo.
+# ══════════════════════════════════════════
+if _NX_OK and _nxroutes is not None:
+    try:
+        _nxroutes.register(
+            app,
+            llm_call=_llm_call,
+            fast_llm=_fast_llm,
+            base_system=SYSTEM_BASE,
+            memory_getter=get_memory_prompt,
+        )
+        logger.info("🌟 NeuroCore-X routes registradas (ULTRA / IMAGE / PROFILE / STREAM)")
+    except Exception as _e:
+        logger.warning("NeuroCore-X no se pudo registrar: %s", _e)
 
 
 # 🚀 ARRANQUE
