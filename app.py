@@ -8,8 +8,37 @@ import io
 import subprocess
 import tempfile
 
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v2 HÍBRIDO — Módulos avanzados
+# (integración aditiva: no modifica la lógica original)
+# ══════════════════════════════════════════
+try:
+    import reasoning  as _reasoning
+    import database   as _db
+    import embeddings as _emb
+    import favicon    as _favicon
+    _DN2_OK = True
+except Exception as _e:
+    print(f"[deepnova-v2] módulos avanzados no disponibles: {_e}")
+    _reasoning = _db = _emb = _favicon = None
+    _DN2_OK = False
+
 app = Flask(__name__)
 CORS(app)
+
+# Registrar favicons M7 (servicio de /favicon.svg, /icon-*.png, /site.webmanifest)
+if _favicon is not None:
+    try:
+        _favicon.register(app)
+    except Exception as _e:
+        print(f"[deepnova-v2] favicon register error: {_e}")
+
+# Inicializar DB M2 (lazy, seguro de llamar varias veces)
+if _db is not None:
+    try:
+        _db.init_db()
+    except Exception as _e:
+        print(f"[deepnova-v2] db init error: {_e}")
 
 # ── CLIENTE ───────────────────────────────
 _client = None
@@ -1983,6 +2012,256 @@ def document_analyze():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+
+# ══════════════════════════════════════════
+# 🆕 M1 · RAZONAMIENTO AVANZADO (CoT + Self-Consistency + ReAct)
+# ══════════════════════════════════════════
+
+# Prompts y modelos por modo M3 (12 modos aislados)
+MODE_CONFIG = {
+    "chat":      {"model": MODELS["fast"],    "color": "#6366f1", "temp": 0.8,
+                   "prompt": "Eres DeepNova en modo Chat: conversación inteligente, amable y directa."},
+    "code":      {"model": MODELS["smart"],   "color": "#06b6d4", "temp": 0.3,
+                   "prompt": "Eres DeepNova en modo Código: genera código limpio, comentado, producción-ready."},
+    "execute":   {"model": MODELS["smart"],   "color": "#10b981", "temp": 0.2,
+                   "prompt": "Eres DeepNova en modo Ejecución: generas Python con print() y verificas."},
+    "design":    {"model": MODELS["smart"],   "color": "#8b5cf6", "temp": 0.7,
+                   "prompt": "Eres DeepNova en modo Diseño: UI/UX premium, animaciones, dark mode."},
+    "translate": {"model": MODELS["fast"],    "color": "#4ade80", "temp": 0.4,
+                   "prompt": "Eres DeepNova en modo Traducción: precisión léxica y contexto cultural."},
+    "content":   {"model": MODELS["smart"],   "color": "#fb923c", "temp": 0.75,
+                   "prompt": "Eres DeepNova en modo Contenido: textos SEO-ready, atractivos y originales."},
+    "analyze":   {"model": MODELS["smart"],   "color": "#22c55e", "temp": 0.5,
+                   "prompt": "Eres DeepNova en modo Análisis: datos, patrones, insights accionables."},
+    "reason":    {"model": MODELS["reason"],  "color": "#fbbf24", "temp": 0.5,
+                   "prompt": "Eres DeepNova en modo Razonamiento: lógica profunda, pros/contras, decisiones."},
+    "research":  {"model": MODELS["smart"],   "color": "#06b6d4", "temp": 0.5,
+                   "prompt": "Eres DeepNova en modo Research: investigación profunda con datos 2025-2026."},
+    "agent":     {"model": MODELS["smart"],   "color": "#fb923c", "temp": 0.6,
+                   "prompt": "Eres DeepNova en modo Agente: planificas, ejecutas paso a paso y verificas."},
+    "debate":    {"model": MODELS["smart"],   "color": "#f87171", "temp": 0.7,
+                   "prompt": "Eres DeepNova en modo Debate: múltiples perspectivas y veredicto."},
+    "creative":  {"model": MODELS["creative"], "color": "#ec4899", "temp": 0.9,
+                   "prompt": "Eres DeepNova en modo Creativo: ideas originales, narrativa, storytelling."},
+}
+
+def _llm_call(messages, temperature, model=None):
+    """Wrapper unificado para el pipeline M1."""
+    try:
+        r = get_groq().chat.completions.create(
+            model=model or MODELS["smart"],
+            messages=messages,
+            temperature=temperature,
+            max_tokens=1200,
+        )
+        return r.choices[0].message.content
+    except Exception as e:
+        return f"[Error LLM: {e}]"
+
+def _fast_llm(prompt):
+    try:
+        r = get_groq().chat.completions.create(
+            model=MODELS["fast"],
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3, max_tokens=200,
+        )
+        return r.choices[0].message.content
+    except Exception:
+        return ""
+
+@app.route("/api/reason", methods=["POST"])
+def api_reason():
+    """Endpoint avanzado M1: CoT + self-consistency + meta-check."""
+    if _reasoning is None:
+        return jsonify({"error": "Módulo reasoning no disponible"}), 501
+    data  = request.get_json() or {}
+    query = (data.get("query") or "").strip()
+    mode  = data.get("mode", "reason")
+    use_sc = bool(data.get("self_consistency", False))
+    if not query:
+        return jsonify({"error": "Falta 'query'"}), 400
+    cfg = MODE_CONFIG.get(mode, MODE_CONFIG["chat"])
+    try:
+        result = _reasoning.reason_pipeline(
+            query=query, mode=mode,
+            llm_call=lambda m, t: _llm_call(m, t, cfg["model"]),
+            fast_llm=_fast_llm,
+            base_system=SYSTEM_BASE + "\n\n" + cfg["prompt"],
+            use_self_consistency=use_sc,
+        )
+        # No exponer thinking al cliente por defecto
+        public = {k: v for k, v in result.items() if k != "thinking"}
+        return jsonify({"success": True, **public, "mode_config": cfg})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/modes", methods=["GET"])
+def api_modes():
+    """Catálogo de modos M3 con colores y modelos."""
+    return jsonify({"modes": [
+        {"key": k, "model": v["model"], "color": v["color"],
+         "temp": v["temp"], "prompt": v["prompt"][:120]}
+        for k, v in MODE_CONFIG.items()
+    ]})
+
+# ══════════════════════════════════════════
+# 🆕 M2 · CONVERSACIONES PERSISTENTES + BÚSQUEDA SEMÁNTICA
+# ══════════════════════════════════════════
+
+@app.route("/api/conversations", methods=["GET", "POST"])
+def api_conversations():
+    if _db is None:
+        return jsonify({"error": "DB no disponible"}), 501
+    if request.method == "GET":
+        sid = request.args.get("sid", "anon")
+        return jsonify({"conversations": _db.list_conversations(sid)})
+    data = request.get_json() or {}
+    sid = data.get("sid", "anon")
+    title = data.get("title", "Nueva conversación")
+    mode = data.get("mode", "chat")
+    cid = _db.create_conversation(sid, title, mode)
+    return jsonify({"success": bool(cid), "id": cid})
+
+@app.route("/api/conversations/<int:cid>", methods=["GET", "PATCH", "DELETE"])
+def api_conversation_detail(cid):
+    if _db is None:
+        return jsonify({"error": "DB no disponible"}), 501
+    if request.method == "GET":
+        conv = _db.get_conversation(cid)
+        if not conv:
+            return jsonify({"error": "No encontrada"}), 404
+        msgs = _db.list_messages(cid)
+        # Limpiamos blobs de embedding del payload público
+        for m in msgs:
+            m.pop("embedding_blob", None)
+        return jsonify({"conversation": conv, "messages": msgs})
+    if request.method == "PATCH":
+        data = request.get_json() or {}
+        fields = {k: data[k] for k in ("title", "mode", "summary") if k in data}
+        ok = _db.update_conversation(cid, **fields)
+        return jsonify({"success": ok})
+    if request.method == "DELETE":
+        return jsonify({"success": _db.delete_conversation(cid)})
+
+@app.route("/api/conversations/<int:cid>/messages", methods=["POST"])
+def api_add_message(cid):
+    if _db is None:
+        return jsonify({"error": "DB no disponible"}), 501
+    data = request.get_json() or {}
+    role = data.get("role", "user")
+    content = data.get("content", "")
+    model = data.get("model", "")
+    modes = data.get("modes", [])
+    blob = None
+    if _emb is not None:
+        try:
+            blob = _emb.embed_to_blob(content)
+        except Exception:
+            blob = None
+    mid = _db.add_message(cid, role, content, model, modes, blob)
+    # Summarize cada 50 mensajes
+    try:
+        n = _db.count_messages(cid)
+        if n % 50 == 0 and n > 0:
+            _auto_summarize_conversation(cid)
+    except Exception:
+        pass
+    return jsonify({"success": bool(mid), "id": mid})
+
+def _auto_summarize_conversation(cid):
+    """Genera un resumen cada 50 mensajes para mantener el contexto compacto."""
+    if _db is None:
+        return
+    msgs = _db.list_messages(cid, limit=50)
+    if not msgs:
+        return
+    text = "\n".join(f"{m['role']}: {m['content'][:300]}" for m in msgs)[-6000:]
+    try:
+        r = get_groq().chat.completions.create(
+            model=MODELS["fast"],
+            messages=[
+                {"role": "system", "content": "Resume la conversación en 5 bullets clave."},
+                {"role": "user",   "content": text},
+            ],
+            temperature=0.3, max_tokens=300,
+        )
+        summary = r.choices[0].message.content
+        _db.update_conversation(cid, summary=summary)
+    except Exception as e:
+        print(f"[auto-summary] {e}")
+
+@app.route("/api/memory/search", methods=["POST"])
+def api_memory_search():
+    """Búsqueda semántica cross-conversation por sid."""
+    if _db is None or _emb is None:
+        return jsonify({"error": "DB/embeddings no disponibles"}), 501
+    data  = request.get_json() or {}
+    sid   = data.get("sid", "anon")
+    query = (data.get("query") or "").strip()
+    top_k = int(data.get("top_k", 5))
+    if not query:
+        return jsonify({"error": "Falta 'query'"}), 400
+    try:
+        corpus_raw = _db.all_messages_with_embedding(sid, limit=500)
+        corpus = [
+            ({"id": r["id"], "conv_id": r["conversation_id"],
+              "role": r["role"], "content": r["content"],
+              "title": r["title"], "created_at": str(r["created_at"])},
+             r["embedding_blob"])
+            for r in corpus_raw
+        ]
+        results = _emb.semantic_search(query, corpus, top_k=top_k)
+        out = [{"score": round(s, 3), **item} for s, item in results]
+        return jsonify({"results": out, "total": len(out),
+                        "engine": "MiniLM-L6-v2" if _emb.is_real_model() else "fallback-hash"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ══════════════════════════════════════════
+# 🆕 M5 · FEEDBACK (base para autoaprendizaje)
+# ══════════════════════════════════════════
+
+@app.route("/api/feedback", methods=["POST", "GET"])
+def api_feedback():
+    if _db is None:
+        return jsonify({"error": "DB no disponible"}), 501
+    if request.method == "GET":
+        return jsonify(_db.feedback_stats(limit=50))
+    data = request.get_json() or {}
+    sid = data.get("sid", "anon")
+    vote = int(data.get("vote", 0))         # +1 / -1
+    comment = data.get("comment", "")
+    message_id = data.get("message_id")
+    signal = data.get("signal", "thumb")    # thumb | copied | regenerated
+    fid = _db.add_feedback(sid, message_id, vote, comment, signal)
+    return jsonify({"success": bool(fid), "id": fid})
+
+# ══════════════════════════════════════════
+# 🆕 HEALTH EXTENDIDO (estado de módulos v2)
+# ══════════════════════════════════════════
+
+@app.route("/api/health")
+def api_health():
+    info = {
+        "version":   "DeepNova 2.0 Híbrido",
+        "v2_modules": _DN2_OK,
+        "models":    list(MODELS.keys()),
+        "reasoning": _reasoning is not None,
+        "database":  _db is not None,
+        "embeddings": _emb is not None,
+        "embeddings_engine": (_emb.is_real_model() if _emb else None),
+        "favicon":   _favicon is not None,
+    }
+    if _db is not None:
+        try:
+            info["db"] = _db.db_info()
+        except Exception:
+            pass
+    return jsonify(info)
+
+# ══════════════════════════════════════════
+# 🚀 ARRANQUE
+# ══════════════════════════════════════════
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
