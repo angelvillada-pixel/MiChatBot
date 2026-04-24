@@ -1497,6 +1497,493 @@ def scrape():
         "chars":   len(content)
     })
 
+# ══════════════════════════════════════════
+# 🚀 DEEPAGENT FEATURES — Módulos avanzados
+# ══════════════════════════════════════════
+
+WORKFLOWS_FILE = "deepnova_workflows.json"
+INTEGRATIONS_FILE = "deepnova_integrations.json"
+REPORTS_FILE = "deepnova_reports.json"
+APPS_FILE = "deepnova_apps.json"
+
+workflows_store   = load_json(WORKFLOWS_FILE)   or {}
+integrations_store = load_json(INTEGRATIONS_FILE) or {}
+reports_store     = load_json(REPORTS_FILE)     or {}
+apps_store        = load_json(APPS_FILE)        or {}
+
+# ──────────────────────────────────────────
+# 📊 GENERADOR DE INFORMES ESTRUCTURADOS
+# ──────────────────────────────────────────
+def generate_structured_report(topic, sid, depth="standard"):
+    """
+    Genera un informe profesional estructurado.
+    depth: 'quick' | 'standard' | 'deep'
+    """
+    depth_cfg = {
+        "quick":    {"tokens": 1200, "sections": 4},
+        "standard": {"tokens": 2200, "sections": 6},
+        "deep":     {"tokens": 3500, "sections": 8},
+    }.get(depth, {"tokens": 2200, "sections": 6})
+
+    # Paso 1: investigación web si es necesario
+    web_ctx = ""
+    try:
+        search_results = web_search(topic)
+        if search_results:
+            web_ctx = "\n\nDATOS WEB RECIENTES:\n" + "\n".join(
+                f"- {r.get('title','')}: {r.get('snippet','')}" for r in search_results[:5]
+            )
+    except Exception:
+        pass
+
+    prompt_system = (
+        "Eres un analista experto. Genera un INFORME PROFESIONAL ESTRUCTURADO en Markdown. "
+        f"Debe tener {depth_cfg['sections']} secciones claras con encabezados ##, "
+        "incluir datos concretos, tablas comparativas cuando aporten valor, "
+        "y terminar con 'Conclusiones' y 'Próximos pasos'. "
+        "Estilo ejecutivo, profundo, accionable."
+    )
+    user_msg = (
+        f"Tema: {topic}\n"
+        f"Profundidad: {depth}\n"
+        "Estructura obligatoria:\n"
+        "1. Resumen ejecutivo\n"
+        "2. Contexto y antecedentes\n"
+        "3. Análisis principal (con datos)\n"
+        "4. Tabla comparativa o métricas clave\n"
+        "5. Riesgos y oportunidades\n"
+        "6. Recomendaciones\n"
+        "7. Conclusiones\n"
+        "8. Próximos pasos accionables"
+        + web_ctx
+    )
+    r = get_groq().chat.completions.create(
+        model=MODELS["smart"],
+        messages=[
+            {"role": "system", "content": prompt_system},
+            {"role": "user",   "content": user_msg}
+        ],
+        max_tokens=depth_cfg["tokens"],
+        temperature=0.6
+    )
+    content = r.choices[0].message.content
+    report_id = f"rep_{int(time.time())}_{sid[:6]}"
+    if sid not in reports_store:
+        reports_store[sid] = []
+    reports_store[sid].append({
+        "id": report_id,
+        "topic": topic,
+        "depth": depth,
+        "content": content,
+        "created": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "words": len(content.split())
+    })
+    save_json(REPORTS_FILE, reports_store)
+    return {"id": report_id, "content": content, "words": len(content.split())}
+
+# ──────────────────────────────────────────
+# 🏗️ CONSTRUCTOR DE APPS SIN CÓDIGO
+# ──────────────────────────────────────────
+def build_no_code_app(description, sid, app_type="webapp"):
+    """
+    Genera una aplicación web completa (HTML+CSS+JS) a partir de una descripción.
+    app_type: 'webapp' | 'landing' | 'dashboard' | 'tool'
+    """
+    type_hints = {
+        "webapp":    "aplicación web interactiva con lógica",
+        "landing":   "landing page moderna con secciones hero, features, CTA",
+        "dashboard": "dashboard con tarjetas de métricas, gráficas CSS y tablas",
+        "tool":      "herramienta utilitaria enfocada a resolver una tarea concreta",
+    }.get(app_type, "aplicación web")
+
+    system = (
+        "Eres un desarrollador senior full-stack y diseñador UI/UX premium. "
+        "Genera una aplicación web COMPLETA en UN SOLO archivo HTML autocontenido. "
+        "Requisitos OBLIGATORIOS:\n"
+        "- HTML5 semántico + CSS moderno (variables, grid, flex) + JS vanilla funcional\n"
+        "- Diseño DARK MODE premium con gradientes y animaciones sutiles\n"
+        "- 100% responsive (móvil + desktop)\n"
+        "- Sin dependencias externas (sin CDN obligatorio)\n"
+        "- Código LIMPIO, comentado y listo para producción\n"
+        "- Debe FUNCIONAR al abrirlo en un navegador\n"
+        "Devuelve SOLO el código HTML entre ```html ... ``` sin texto adicional."
+    )
+    user = f"Tipo: {type_hints}\nDescripción del usuario: {description}\nGenera el HTML completo."
+    r = get_groq().chat.completions.create(
+        model=MODELS["smart"],
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user}
+        ],
+        max_tokens=4000,
+        temperature=0.65
+    )
+    raw = r.choices[0].message.content
+    # Extraer HTML
+    m = re.search(r"```(?:html)?\n?([\s\S]*?)```", raw)
+    html_code = m.group(1).strip() if m else raw.strip()
+    if not html_code.lower().startswith("<!doctype") and "<html" not in html_code.lower():
+        html_code = f"<!DOCTYPE html>\n<html lang='es'>\n<head><meta charset='UTF-8'></head>\n<body>\n{html_code}\n</body></html>"
+
+    app_id = f"app_{int(time.time())}_{sid[:6]}"
+    if sid not in apps_store:
+        apps_store[sid] = []
+    apps_store[sid].append({
+        "id":   app_id,
+        "type": app_type,
+        "description": description,
+        "html": html_code,
+        "created": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "size_kb": round(len(html_code)/1024, 2)
+    })
+    save_json(APPS_FILE, apps_store)
+    return {"id": app_id, "html": html_code, "size_kb": round(len(html_code)/1024, 2)}
+
+# ──────────────────────────────────────────
+# ⚙️ MOTOR DE WORKFLOWS / AUTOMATIZACIÓN
+# ──────────────────────────────────────────
+WORKFLOW_STEP_TYPES = {
+    "search":    "Búsqueda web",
+    "analyze":   "Análisis de texto",
+    "summarize": "Resumir contenido",
+    "translate": "Traducir texto",
+    "code":      "Generar código",
+    "execute":   "Ejecutar Python",
+    "report":    "Generar informe",
+    "email_draft": "Redactar email",
+}
+
+def run_workflow_step(step, context):
+    """Ejecuta un paso individual de workflow y devuelve el resultado."""
+    stype = step.get("type", "analyze")
+    inp   = step.get("input", "")
+    # Sustituir variables {{prev}} con el resultado del paso anterior
+    inp = inp.replace("{{prev}}", str(context.get("prev", ""))[:2000])
+    try:
+        if stype == "search":
+            results = web_search(inp)
+            return "\n".join(f"- {r.get('title','')}: {r.get('snippet','')}" for r in (results or [])[:5])
+        if stype == "execute":
+            ex = execute_python(inp)
+            return ex.get("output") or ex.get("error", "")
+        if stype == "report":
+            rep = generate_structured_report(inp, context.get("sid", "wf"), depth="quick")
+            return rep["content"][:3000]
+        # Para el resto usamos LLM con prompts distintos
+        system_map = {
+            "analyze":   "Analiza el siguiente contenido y extrae insights clave en viñetas.",
+            "summarize": "Resume el siguiente contenido en 5 puntos clave.",
+            "translate": "Traduce al inglés el siguiente texto de forma natural.",
+            "code":      "Genera código funcional listo para producción con comentarios.",
+            "email_draft": "Redacta un email profesional claro, asunto incluido.",
+        }
+        sys_p = system_map.get(stype, "Procesa la siguiente entrada.")
+        r = get_groq().chat.completions.create(
+            model=MODELS["fast"],
+            messages=[
+                {"role": "system", "content": sys_p},
+                {"role": "user",   "content": inp}
+            ],
+            max_tokens=800,
+            temperature=0.5
+        )
+        return r.choices[0].message.content
+    except Exception as e:
+        return f"[Error en paso {stype}: {e}]"
+
+def execute_workflow(wf_id, sid):
+    wf = workflows_store.get(sid, {}).get(wf_id)
+    if not wf:
+        return {"success": False, "error": "Workflow no encontrado"}
+    steps = wf.get("steps", [])
+    context = {"sid": sid, "prev": ""}
+    logs = []
+    for i, step in enumerate(steps, 1):
+        logs.append(f"**Paso {i}: {WORKFLOW_STEP_TYPES.get(step['type'], step['type'])}**")
+        out = run_workflow_step(step, context)
+        context["prev"] = out
+        logs.append(out[:1500] + ("..." if len(out) > 1500 else ""))
+        logs.append("---")
+    wf["last_run"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    wf["runs"] = wf.get("runs", 0) + 1
+    save_json(WORKFLOWS_FILE, workflows_store)
+    return {"success": True, "logs": "\n\n".join(logs), "steps_run": len(steps)}
+
+# ──────────────────────────────────────────
+# 🔌 INTEGRACIONES EXTERNAS (mock seguro)
+# ──────────────────────────────────────────
+AVAILABLE_INTEGRATIONS = {
+    "gmail":       {"name": "Gmail",            "icon": "📧", "category": "Google Workspace"},
+    "gdrive":      {"name": "Google Drive",     "icon": "📁", "category": "Google Workspace"},
+    "gcalendar":   {"name": "Google Calendar",  "icon": "📅", "category": "Google Workspace"},
+    "gsheets":     {"name": "Google Sheets",    "icon": "📊", "category": "Google Workspace"},
+    "salesforce":  {"name": "Salesforce",       "icon": "☁️", "category": "CRM"},
+    "hubspot":     {"name": "HubSpot",          "icon": "🧲", "category": "CRM"},
+    "slack":       {"name": "Slack",            "icon": "💬", "category": "Comunicación"},
+    "notion":      {"name": "Notion",           "icon": "📓", "category": "Productividad"},
+    "github":      {"name": "GitHub",           "icon": "🐙", "category": "Desarrollo"},
+    "jira":        {"name": "Jira",             "icon": "🎯", "category": "Gestión"},
+    "trello":      {"name": "Trello",           "icon": "📋", "category": "Gestión"},
+    "zapier":      {"name": "Zapier",           "icon": "⚡", "category": "Automatización"},
+}
+
+def connect_integration(sid, key, credentials=None):
+    if key not in AVAILABLE_INTEGRATIONS:
+        return {"success": False, "error": "Integración desconocida"}
+    if sid not in integrations_store:
+        integrations_store[sid] = {}
+    integrations_store[sid][key] = {
+        "connected":  True,
+        "connected_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "meta":       AVAILABLE_INTEGRATIONS[key],
+        # credentials NO se guardan en texto plano en un sistema real
+        "credentials_set": bool(credentials)
+    }
+    save_json(INTEGRATIONS_FILE, integrations_store)
+    return {"success": True, "integration": key}
+
+def disconnect_integration(sid, key):
+    if sid in integrations_store and key in integrations_store[sid]:
+        del integrations_store[sid][key]
+        save_json(INTEGRATIONS_FILE, integrations_store)
+        return {"success": True}
+    return {"success": False, "error": "No conectada"}
+
+# ──────────────────────────────────────────
+# 📄 ANÁLISIS DE DOCUMENTOS
+# ──────────────────────────────────────────
+def extract_text_from_upload(filename, b64_data):
+    """Extrae texto de PDF, TXT, MD o DOCX (subido en base64)."""
+    try:
+        raw = base64.b64decode(b64_data)
+    except Exception as e:
+        return None, f"Base64 inválido: {e}"
+    ext = (filename.rsplit(".", 1)[-1] or "").lower()
+    try:
+        if ext in ("txt", "md", "csv", "json", "log"):
+            return raw.decode("utf-8", errors="ignore"), None
+        if ext == "pdf":
+            try:
+                from pypdf import PdfReader
+            except ImportError:
+                try:
+                    from PyPDF2 import PdfReader
+                except ImportError:
+                    return None, "Instala pypdf o PyPDF2 para analizar PDF"
+            reader = PdfReader(io.BytesIO(raw))
+            return "\n".join((p.extract_text() or "") for p in reader.pages), None
+        if ext == "docx":
+            try:
+                from docx import Document
+            except ImportError:
+                return None, "Instala python-docx para analizar DOCX"
+            doc = Document(io.BytesIO(raw))
+            return "\n".join(p.text for p in doc.paragraphs), None
+        # Fallback: intentar como texto
+        return raw.decode("utf-8", errors="ignore"), None
+    except Exception as e:
+        return None, f"Error procesando documento: {e}"
+
+def analyze_document(text, question=None):
+    """Analiza un documento: resumen + insights + Q&A opcional."""
+    text = (text or "")[:15000]  # Límite de seguridad
+    if not text.strip():
+        return "El documento está vacío o no se pudo leer."
+    if question:
+        system = (
+            "Eres un experto analista. Responde la pregunta del usuario "
+            "BASÁNDOTE EXCLUSIVAMENTE en el documento aportado. "
+            "Si la respuesta no está, dilo claramente."
+        )
+        user = f"DOCUMENTO:\n{text}\n\nPREGUNTA: {question}"
+    else:
+        system = (
+            "Eres un analista experto. Analiza el documento y devuelve en Markdown:\n"
+            "## Resumen ejecutivo (3 frases)\n"
+            "## Puntos clave (5 viñetas)\n"
+            "## Entidades y cifras importantes\n"
+            "## Tono / Propósito del documento\n"
+            "## Próximos pasos recomendados"
+        )
+        user = f"DOCUMENTO:\n{text}"
+    r = get_groq().chat.completions.create(
+        model=MODELS["smart"],
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user}
+        ],
+        max_tokens=1500,
+        temperature=0.4
+    )
+    return r.choices[0].message.content
+
+# ══════════════════════════════════════════
+# 🆕 NUEVOS ENDPOINTS DEEPAGENT
+# ══════════════════════════════════════════
+
+@app.route("/report/generate", methods=["POST"])
+def report_generate():
+    data  = request.get_json() or {}
+    topic = (data.get("topic") or "").strip()
+    depth = data.get("depth", "standard")
+    sid   = data.get("sid", "anon")
+    if not topic:
+        return jsonify({"error": "Falta 'topic'"}), 400
+    if not check_rate(request.remote_addr or "x", 10, 60):
+        return jsonify({"error": "Rate limit"}), 429
+    try:
+        result = generate_structured_report(topic, sid, depth)
+        return jsonify({"success": True, **result})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/report/list", methods=["GET"])
+def report_list():
+    sid = request.args.get("sid", "anon")
+    return jsonify({"reports": reports_store.get(sid, [])[-20:]})
+
+@app.route("/app/build", methods=["POST"])
+def app_build():
+    data = request.get_json() or {}
+    desc = (data.get("description") or "").strip()
+    app_type = data.get("type", "webapp")
+    sid  = data.get("sid", "anon")
+    if not desc:
+        return jsonify({"error": "Falta 'description'"}), 400
+    if not check_rate(request.remote_addr or "x", 10, 60):
+        return jsonify({"error": "Rate limit"}), 429
+    try:
+        result = build_no_code_app(desc, sid, app_type)
+        return jsonify({"success": True, **result})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/app/list", methods=["GET"])
+def app_list():
+    sid = request.args.get("sid", "anon")
+    lst = [{k: v for k, v in a.items() if k != "html"} for a in apps_store.get(sid, [])[-20:]]
+    return jsonify({"apps": lst})
+
+@app.route("/app/<app_id>", methods=["GET"])
+def app_get(app_id):
+    sid = request.args.get("sid", "anon")
+    for a in apps_store.get(sid, []):
+        if a["id"] == app_id:
+            return jsonify({"success": True, "app": a})
+    return jsonify({"success": False, "error": "No encontrada"}), 404
+
+@app.route("/workflow", methods=["GET", "POST", "DELETE"])
+def workflow_endpoint():
+    if request.method == "GET":
+        sid = request.args.get("sid", "anon")
+        return jsonify({
+            "workflows": list((workflows_store.get(sid, {}) or {}).values()),
+            "step_types": WORKFLOW_STEP_TYPES
+        })
+    if request.method == "POST":
+        data = request.get_json() or {}
+        sid  = data.get("sid", "anon")
+        name = (data.get("name") or "").strip() or f"Workflow {len(workflows_store.get(sid,{}))+1}"
+        steps = data.get("steps", [])
+        if not steps or not isinstance(steps, list):
+            return jsonify({"error": "Faltan steps"}), 400
+        wf_id = f"wf_{int(time.time())}_{sid[:6]}"
+        if sid not in workflows_store:
+            workflows_store[sid] = {}
+        workflows_store[sid][wf_id] = {
+            "id": wf_id,
+            "name": name,
+            "steps": steps,
+            "created": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "runs": 0,
+            "last_run": None
+        }
+        save_json(WORKFLOWS_FILE, workflows_store)
+        return jsonify({"success": True, "id": wf_id})
+    if request.method == "DELETE":
+        data = request.get_json() or {}
+        sid  = data.get("sid", "anon")
+        wf_id = data.get("id")
+        if sid in workflows_store and wf_id in workflows_store[sid]:
+            del workflows_store[sid][wf_id]
+            save_json(WORKFLOWS_FILE, workflows_store)
+            return jsonify({"success": True})
+        return jsonify({"success": False}), 404
+
+@app.route("/workflow/run", methods=["POST"])
+def workflow_run():
+    data = request.get_json() or {}
+    sid  = data.get("sid", "anon")
+    wf_id = data.get("id")
+    if not wf_id:
+        return jsonify({"error": "Falta id"}), 400
+    if not check_rate(request.remote_addr or "x", 5, 60):
+        return jsonify({"error": "Rate limit"}), 429
+    try:
+        result = execute_workflow(wf_id, sid)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/integrations", methods=["GET"])
+def integrations_list():
+    sid = request.args.get("sid", "anon")
+    connected = integrations_store.get(sid, {}) or {}
+    catalog = []
+    for key, meta in AVAILABLE_INTEGRATIONS.items():
+        catalog.append({
+            "key":       key,
+            "name":      meta["name"],
+            "icon":      meta["icon"],
+            "category":  meta["category"],
+            "connected": key in connected,
+            "connected_at": connected.get(key, {}).get("connected_at")
+        })
+    return jsonify({"integrations": catalog})
+
+@app.route("/integrations/connect", methods=["POST"])
+def integrations_connect():
+    data = request.get_json() or {}
+    sid  = data.get("sid", "anon")
+    key  = data.get("key")
+    creds = data.get("credentials")
+    return jsonify(connect_integration(sid, key, creds))
+
+@app.route("/integrations/disconnect", methods=["POST"])
+def integrations_disconnect():
+    data = request.get_json() or {}
+    return jsonify(disconnect_integration(data.get("sid", "anon"), data.get("key")))
+
+@app.route("/document/analyze", methods=["POST"])
+def document_analyze():
+    data = request.get_json() or {}
+    filename = data.get("filename", "doc.txt")
+    b64      = data.get("data", "")
+    text     = data.get("text", "")  # alternativa: texto directo
+    question = data.get("question")
+    sid      = data.get("sid", "anon")
+    if not check_rate(request.remote_addr or "x", 10, 60):
+        return jsonify({"error": "Rate limit"}), 429
+    if not text and b64:
+        text, err = extract_text_from_upload(filename, b64)
+        if err:
+            return jsonify({"success": False, "error": err}), 400
+    if not text:
+        return jsonify({"success": False, "error": "Sin contenido para analizar"}), 400
+    try:
+        result = analyze_document(text, question)
+        # Guardar en knowledge base
+        add_to_knowledge(sid, "documento", f"{filename}: {text[:400]}", "upload")
+        return jsonify({
+            "success":   True,
+            "filename":  filename,
+            "chars":     len(text),
+            "analysis":  result
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
