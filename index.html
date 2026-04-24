@@ -543,6 +543,93 @@ html,body{
   .tb{padding:9px 12px;border-radius:14px}
   .tl{font-size:11px}
 }
+/* =============== DEEPAGENT SUITE STYLES =============== */
+.da-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.da-modal.on{display:flex;animation:daFade .25s ease}
+@keyframes daFade{from{opacity:0}to{opacity:1}}
+.da-box{background:var(--s1);border:1px solid var(--border);border-radius:20px;width:100%;max-width:1100px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.da-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,var(--s2),var(--s1))}
+.da-head h3{color:var(--text);font-size:17px;flex:1;font-weight:700}
+.da-head .da-sub{color:var(--text2);font-size:12px;font-weight:400;display:block;margin-top:2px}
+.da-close{background:var(--s3);border:none;color:var(--text);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px}
+.da-close:hover{background:var(--red);color:#fff}
+.da-tabs{display:flex;gap:4px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--s2);overflow-x:auto}
+.da-tab{padding:8px 14px;background:transparent;border:1px solid transparent;color:var(--text2);border-radius:10px;cursor:pointer;font-size:13px;white-space:nowrap;font-weight:500;transition:all .2s}
+.da-tab:hover{color:var(--text);background:var(--s3)}
+.da-tab.on{background:linear-gradient(90deg,var(--p),var(--p2));color:#fff;border-color:var(--p)}
+.da-body{flex:1;overflow:auto;padding:20px 22px}
+.da-pane{display:none}
+.da-pane.on{display:block;animation:daFade .2s}
+.da-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:720px){.da-row{grid-template-columns:1fr}}
+.da-field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.da-field label{color:var(--text2);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.da-field input,.da-field textarea,.da-field select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .2s}
+.da-field input:focus,.da-field textarea:focus,.da-field select:focus{border-color:var(--p)}
+.da-field textarea{min-height:90px;resize:vertical}
+.da-btn{background:linear-gradient(90deg,var(--p),var(--p2));border:none;color:#fff;padding:12px 20px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:transform .15s}
+.da-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.35)}
+.da-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.da-btn.ghost{background:var(--s3);color:var(--text)}
+.da-btn.ghost:hover{background:var(--p);color:#fff}
+.da-btn.danger{background:linear-gradient(90deg,var(--red),#dc2626)}
+.da-out{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text);font-size:13px;line-height:1.6;max-height:400px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin-top:12px}
+.da-out:empty{display:none}
+.da-out h1,.da-out h2,.da-out h3{color:var(--p3);margin:12px 0 6px}
+.da-out h2{font-size:15px}
+.da-out h3{font-size:14px}
+.da-out code{background:var(--s3);padding:2px 6px;border-radius:4px;font-size:12px}
+.da-out pre{background:var(--s3);padding:10px;border-radius:8px;overflow-x:auto;margin:8px 0}
+.da-out table{border-collapse:collapse;margin:10px 0;width:100%}
+.da-out th,.da-out td{border:1px solid var(--border);padding:6px 10px;font-size:12px;text-align:left}
+.da-out th{background:var(--s2);color:var(--p3)}
+/* App Builder preview */
+.da-preview{background:#fff;border:1px solid var(--border);border-radius:12px;margin-top:12px;height:480px;overflow:hidden;position:relative}
+.da-preview iframe{width:100%;height:100%;border:none;background:#fff}
+.da-preview-bar{display:flex;gap:6px;padding:8px 12px;background:var(--s2);border-bottom:1px solid var(--border);align-items:center}
+.da-preview-bar .dot{width:10px;height:10px;border-radius:50%}
+.da-preview-bar .d1{background:#f87171}.da-preview-bar .d2{background:#fbbf24}.da-preview-bar .d3{background:#4ade80}
+.da-preview-bar span{color:var(--text2);font-size:11px;margin-left:auto}
+/* Workflow builder */
+.wf-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.wf-item{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px}
+.wf-item .wf-name{flex:1;color:var(--text);font-weight:600;font-size:13px}
+.wf-item .wf-meta{color:var(--text2);font-size:11px}
+.wf-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.wf-step{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px;display:grid;grid-template-columns:40px 140px 1fr 30px;gap:8px;align-items:center}
+.wf-step .wf-num{background:var(--p);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.wf-step select,.wf-step input{background:var(--s3);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;font-family:inherit}
+.wf-step .wf-del{background:transparent;border:none;color:var(--red);cursor:pointer;font-size:18px}
+/* Integrations grid */
+.int-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.int-card{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:6px;position:relative}
+.int-card:hover{border-color:var(--p);transform:translateY(-2px)}
+.int-card.conn{border-color:var(--green);background:linear-gradient(135deg,var(--s2),rgba(74,222,128,.08))}
+.int-card .int-icon{font-size:26px}
+.int-card .int-name{color:var(--text);font-weight:600;font-size:13px}
+.int-card .int-cat{color:var(--text2);font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+.int-card .int-status{position:absolute;top:10px;right:10px;font-size:10px;padding:3px 7px;border-radius:20px;background:var(--s3);color:var(--text2);font-weight:600}
+.int-card.conn .int-status{background:var(--green);color:#022}
+/* Document drop zone */
+.da-drop{border:2px dashed var(--border);border-radius:14px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s2)}
+.da-drop:hover,.da-drop.drag{border-color:var(--p);background:rgba(99,102,241,.08)}
+.da-drop .di{font-size:42px;margin-bottom:8px}
+.da-drop .dt{color:var(--text);font-weight:600;font-size:14px;margin-bottom:4px}
+.da-drop .dd{color:var(--text2);font-size:12px}
+.da-drop input{display:none}
+.da-file-info{margin-top:10px;padding:10px;background:var(--s3);border-radius:10px;color:var(--text);font-size:13px;display:none}
+.da-file-info.on{display:flex;align-items:center;gap:10px}
+.da-file-info .fi-ic{font-size:22px}
+.da-file-info .fi-name{flex:1;font-weight:600}
+.da-file-info .fi-size{color:var(--text2);font-size:11px}
+.da-loading{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:daSpin .8s linear infinite}
+@keyframes daSpin{to{transform:rotate(360deg)}}
+/* Report cards */
+.rep-list{display:flex;flex-direction:column;gap:8px}
+.rep-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:all .2s}
+.rep-card:hover{border-color:var(--p)}
+.rep-card .rc-title{color:var(--text);font-weight:600;font-size:13px;margin-bottom:4px}
+.rep-card .rc-meta{color:var(--text2);font-size:11px}
 </style>
 </head>
 <body>
@@ -556,6 +643,146 @@ html,body{
 <div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ============ DEEPAGENT SUITE MODAL ============ -->
+<div class="da-modal" id="daModal">
+  <div class="da-box">
+    <div class="da-head">
+      <div style="font-size:28px">🚀</div>
+      <div style="flex:1">
+        <h3>DeepAgent Suite</h3>
+        <span class="da-sub" id="daSub">Tu asistente todo-en-uno</span>
+      </div>
+      <button class="da-close" onclick="closeDA()">✕</button>
+    </div>
+
+    <div class="da-tabs">
+      <button class="da-tab" data-pane="doc"    onclick="daTab('doc')">📄 Documentos</button>
+      <button class="da-tab" data-pane="app"    onclick="daTab('app')">🏗️ App Builder</button>
+      <button class="da-tab" data-pane="report" onclick="daTab('report')">📊 Informes</button>
+      <button class="da-tab" data-pane="flow"   onclick="daTab('flow')">⚙️ Workflows</button>
+      <button class="da-tab" data-pane="int"    onclick="daTab('int')">🔌 Integraciones</button>
+    </div>
+
+    <div class="da-body">
+
+      <!-- DOCUMENT ANALYZER -->
+      <div class="da-pane" id="da-doc">
+        <div class="da-field">
+          <label>Subir documento (PDF, DOCX, TXT, MD)</label>
+          <label class="da-drop" id="daDrop">
+            <div class="di">📥</div>
+            <div class="dt">Arrastra o haz clic para seleccionar</div>
+            <div class="dd">Límite: 5 MB</div>
+            <input type="file" id="daFile" accept=".pdf,.docx,.txt,.md,.csv,.json,.log" onchange="daFileSel(event)">
+          </label>
+          <div class="da-file-info" id="daFI">
+            <div class="fi-ic">📄</div>
+            <div><div class="fi-name" id="daFN">-</div><div class="fi-size" id="daFS">-</div></div>
+          </div>
+        </div>
+        <div class="da-field">
+          <label>Pregunta (opcional) — si la dejas vacía, resume e identifica insights</label>
+          <input type="text" id="daQ" placeholder="Ej: ¿Cuáles son las cláusulas críticas?">
+        </div>
+        <button class="da-btn" onclick="daDocAnalyze()">🔍 Analizar documento</button>
+        <div class="da-out" id="daDocOut"></div>
+      </div>
+
+      <!-- APP BUILDER -->
+      <div class="da-pane" id="da-app">
+        <div class="da-row">
+          <div class="da-field">
+            <label>Tipo de aplicación</label>
+            <select id="daAppType">
+              <option value="webapp">💻 Web App interactiva</option>
+              <option value="landing">🚀 Landing Page</option>
+              <option value="dashboard">📊 Dashboard</option>
+              <option value="tool">🛠️ Herramienta utilitaria</option>
+            </select>
+          </div>
+          <div class="da-field">
+            <label>Ejemplos rápidos</label>
+            <select id="daAppEx" onchange="if(this.value)document.getElementById('daAppDesc').value=this.value">
+              <option value="">-- Elegir ejemplo --</option>
+              <option value="Calculadora científica con historial y modo oscuro">🧮 Calculadora científica</option>
+              <option value="Lista de tareas con drag&amp;drop, categorías y persistencia en localStorage">📋 ToDo avanzado</option>
+              <option value="Landing page moderna para un SaaS de IA con hero, features, pricing y CTA">🌐 Landing SaaS IA</option>
+              <option value="Dashboard de ventas con tarjetas de KPIs, gráfica CSS y tabla de últimas operaciones">📈 Dashboard ventas</option>
+              <option value="Generador de contraseñas seguras con configuración y copiar al portapapeles">🔐 Gen contraseñas</option>
+              <option value="Temporizador Pomodoro con sonido, sesiones y configuración">⏱️ Pomodoro</option>
+            </select>
+          </div>
+        </div>
+        <div class="da-field">
+          <label>Describe tu aplicación</label>
+          <textarea id="daAppDesc" placeholder="Ej: Una calculadora científica con historial de operaciones, botones grandes, tema oscuro y soporte para teclado..."></textarea>
+        </div>
+        <button class="da-btn" onclick="daBuildApp()">✨ Generar aplicación</button>
+        <div class="da-out" id="daAppMsg"></div>
+        <div class="da-preview" id="daAppPrev" style="display:none">
+          <div class="da-preview-bar">
+            <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div>
+            <span id="daAppPrevInfo">Vista previa</span>
+            <button class="da-btn ghost" style="padding:4px 10px;font-size:11px" onclick="daDownloadApp()">⬇️ Descargar HTML</button>
+            <button class="da-btn ghost" style="padding:4px 10px;font-size:11px" onclick="daOpenAppTab()">↗️ Abrir</button>
+          </div>
+          <iframe id="daAppIframe" sandbox="allow-scripts allow-forms"></iframe>
+        </div>
+      </div>
+
+      <!-- REPORT GENERATOR -->
+      <div class="da-pane" id="da-report">
+        <div class="da-row">
+          <div class="da-field">
+            <label>Tema del informe</label>
+            <input type="text" id="daRepTopic" placeholder="Ej: Impacto de la IA generativa en el sector salud 2026">
+          </div>
+          <div class="da-field">
+            <label>Profundidad</label>
+            <select id="daRepDepth">
+              <option value="quick">⚡ Rápido (4 secciones)</option>
+              <option value="standard" selected>🎯 Estándar (6 secciones)</option>
+              <option value="deep">🔬 Profundo (8 secciones)</option>
+            </select>
+          </div>
+        </div>
+        <button class="da-btn" onclick="daGenReport()">📊 Generar informe</button>
+        <button class="da-btn ghost" onclick="daLoadReports()">📂 Mis informes</button>
+        <div class="da-out" id="daRepOut"></div>
+      </div>
+
+      <!-- WORKFLOW AUTOMATION -->
+      <div class="da-pane" id="da-flow">
+        <div class="da-field">
+          <label>Nombre del workflow</label>
+          <input type="text" id="daWFName" placeholder="Ej: Informe semanal de IA">
+        </div>
+        <div class="da-field">
+          <label>Pasos (la salida de un paso alimenta el siguiente con {{prev}})</label>
+          <div class="wf-steps" id="daWFSteps"></div>
+          <button class="da-btn ghost" onclick="daAddStep()">➕ Añadir paso</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="da-btn" onclick="daSaveWF()">💾 Guardar</button>
+          <button class="da-btn ghost" onclick="daLoadWFs()">📂 Mis workflows</button>
+        </div>
+        <div class="wf-list" id="daWFList" style="margin-top:14px"></div>
+        <div class="da-out" id="daWFOut"></div>
+      </div>
+
+      <!-- INTEGRATIONS -->
+      <div class="da-pane" id="da-int">
+        <p style="color:var(--text2);font-size:13px;margin-bottom:14px">
+          Conecta tus herramientas favoritas para automatizar flujos de trabajo completos.
+          <br><small style="opacity:.7">⚠️ Las integraciones se conectan de forma demostrativa; en producción requieren OAuth real.</small>
+        </p>
+        <div class="int-grid" id="daIntGrid"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
 <div class="vi" id="vi"><div class="vd"></div>Escuchando...</div>
 
 <div class="fl" id="fl" onclick="document.getElementById('logoUp').click()">
@@ -621,6 +848,30 @@ html,body{
         <div class="ni" onclick="setSBMode(this,'translate')">
           <div class="ni-icon">🌍</div>
           <div class="ni-info"><div class="ni-title">Traducción Auto</div><div class="ni-desc">100+ idiomas detectados</div></div>
+        </div>
+      </div>
+
+      <div class="ns">
+        <div class="nl">🚀 DeepAgent Suite</div>
+        <div class="ni" onclick="openDA('doc')">
+          <div class="ni-icon">📄</div>
+          <div class="ni-info"><div class="ni-title">Analizar Documentos</div><div class="ni-desc">PDF, DOCX, TXT + Q&amp;A</div></div>
+        </div>
+        <div class="ni" onclick="openDA('app')">
+          <div class="ni-icon">🏗️</div>
+          <div class="ni-info"><div class="ni-title">App Builder</div><div class="ni-desc">Crea apps sin programar</div></div>
+        </div>
+        <div class="ni" onclick="openDA('report')">
+          <div class="ni-icon">📊</div>
+          <div class="ni-info"><div class="ni-title">Informes Pro</div><div class="ni-desc">Reportes estructurados</div></div>
+        </div>
+        <div class="ni" onclick="openDA('flow')">
+          <div class="ni-icon">⚙️</div>
+          <div class="ni-info"><div class="ni-title">Workflows</div><div class="ni-desc">Automatiza tareas repetitivas</div></div>
+        </div>
+        <div class="ni" onclick="openDA('int')">
+          <div class="ni-icon">🔌</div>
+          <div class="ni-info"><div class="ni-title">Integraciones</div><div class="ni-desc">Gmail, Salesforce, Slack...</div></div>
         </div>
         <div class="ni" onclick="clearChat()">
           <div class="ni-icon">🗑️</div>
@@ -709,6 +960,11 @@ html,body{
       <div class="sg" onclick="useSg(this)">/tarea Revisar código hoy</div>
       <div class="sg" onclick="useSg(this)">⚡ /ejecutar Calcula los primeros 20 primos</div>
       <div class="sg" onclick="useSg(this)">🐍 Ejecuta: lista de Fibonacci hasta 1000</div>
+      <div class="sg" onclick="openDA('doc')">📄 Analizar un documento PDF</div>
+      <div class="sg" onclick="openDA('app')">🏗️ Crear una app sin código</div>
+      <div class="sg" onclick="openDA('report')">📊 Generar informe estructurado</div>
+      <div class="sg" onclick="openDA('flow')">⚙️ Automatizar flujo de trabajo</div>
+      <div class="sg" onclick="openDA('int')">🔌 Conectar Gmail / Salesforce</div>
     </div>
 
     <!-- Mensajes -->
@@ -1447,6 +1703,387 @@ function escForPanel(t){
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
+
+/* ════════════════════════════════════════════════════
+   🚀 DEEPAGENT SUITE — Lógica completa
+   ════════════════════════════════════════════════════ */
+let daCurApp = null;     // app generada (id + html)
+let daDocData = null;    // {filename, b64}
+let daWFStepCount = 0;
+
+const DA_SUBS = {
+  doc:    'Analiza PDFs, DOCX o TXT con IA — hazle preguntas específicas',
+  app:    'Crea aplicaciones web completas sin escribir código',
+  report: 'Genera informes profesionales estructurados y accionables',
+  flow:   'Automatiza tareas repetitivas encadenando pasos',
+  int:    'Conecta Gmail, Salesforce, Slack y más herramientas',
+};
+
+function openDA(tab){
+  document.getElementById('daModal').classList.add('on');
+  daTab(tab || 'doc');
+  if(tab === 'int')    daLoadIntegrations();
+  if(tab === 'flow' && daWFStepCount === 0) daAddStep();
+}
+
+function closeDA(){
+  document.getElementById('daModal').classList.remove('on');
+}
+
+function daTab(name){
+  document.querySelectorAll('.da-tab').forEach(t => t.classList.toggle('on', t.dataset.pane === name));
+  document.querySelectorAll('.da-pane').forEach(p => p.classList.toggle('on', p.id === 'da-' + name));
+  document.getElementById('daSub').textContent = DA_SUBS[name] || '';
+  if(name === 'int') daLoadIntegrations();
+  if(name === 'flow' && daWFStepCount === 0) daAddStep();
+}
+
+/* ---------- DOCUMENT ANALYZER ---------- */
+function daFileSel(ev){
+  const f = ev.target.files[0];
+  if(!f) return;
+  if(f.size > 5 * 1024 * 1024){
+    toast('⚠️ Archivo demasiado grande (>5MB)'); return;
+  }
+  const rdr = new FileReader();
+  rdr.onload = () => {
+    const b64 = rdr.result.split(',')[1] || '';
+    daDocData = { filename: f.name, b64 };
+    document.getElementById('daFI').classList.add('on');
+    document.getElementById('daFN').textContent = f.name;
+    document.getElementById('daFS').textContent = (f.size/1024).toFixed(1) + ' KB · ' + f.type;
+  };
+  rdr.readAsDataURL(f);
+}
+
+async function daDocAnalyze(){
+  if(!daDocData){ toast('📄 Selecciona un documento primero'); return; }
+  const out = document.getElementById('daDocOut');
+  out.innerHTML = '<span class="da-loading"></span> Analizando...';
+  try {
+    const r = await fetch(API + '/document/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        sid, filename: daDocData.filename, data: daDocData.b64,
+        question: document.getElementById('daQ').value.trim() || null
+      })
+    });
+    const d = await r.json();
+    if(d.success){
+      out.innerHTML = mdRender(d.analysis) +
+        `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);color:var(--text2);font-size:11px">
+         📄 ${d.filename} · ${d.chars.toLocaleString()} caracteres procesados</div>`;
+      toast('✅ Documento analizado');
+    } else {
+      out.innerHTML = '<span style="color:var(--red)">❌ ' + (d.error || 'Error') + '</span>';
+    }
+  } catch(e){
+    out.innerHTML = '<span style="color:var(--red)">❌ Error de conexión</span>';
+  }
+}
+
+/* ---------- APP BUILDER ---------- */
+async function daBuildApp(){
+  const desc = document.getElementById('daAppDesc').value.trim();
+  if(!desc){ toast('📝 Describe tu aplicación'); return; }
+  const type = document.getElementById('daAppType').value;
+  const msg  = document.getElementById('daAppMsg');
+  const prev = document.getElementById('daAppPrev');
+  msg.innerHTML = '<span class="da-loading"></span> Generando aplicación... esto puede tardar 15-30s';
+  prev.style.display = 'none';
+  try {
+    const r = await fetch(API + '/app/build', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ sid, description: desc, type })
+    });
+    const d = await r.json();
+    if(d.success){
+      daCurApp = d;
+      msg.innerHTML = `✅ App generada · <b>${d.size_kb} KB</b> · ID: ${d.id}`;
+      prev.style.display = 'block';
+      const iframe = document.getElementById('daAppIframe');
+      iframe.srcdoc = d.html;
+      document.getElementById('daAppPrevInfo').textContent = `${type} · ${d.size_kb} KB`;
+      toast('✅ Aplicación lista');
+    } else {
+      msg.innerHTML = '<span style="color:var(--red)">❌ ' + (d.error || 'Error') + '</span>';
+    }
+  } catch(e){
+    msg.innerHTML = '<span style="color:var(--red)">❌ Error de conexión</span>';
+  }
+}
+
+function daDownloadApp(){
+  if(!daCurApp){ return; }
+  const blob = new Blob([daCurApp.html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = daCurApp.id + '.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('⬇️ Descargado');
+}
+
+function daOpenAppTab(){
+  if(!daCurApp) return;
+  const w = window.open('', '_blank');
+  w.document.write(daCurApp.html);
+  w.document.close();
+}
+
+/* ---------- REPORT GENERATOR ---------- */
+async function daGenReport(){
+  const topic = document.getElementById('daRepTopic').value.trim();
+  if(!topic){ toast('📝 Indica un tema'); return; }
+  const depth = document.getElementById('daRepDepth').value;
+  const out = document.getElementById('daRepOut');
+  out.innerHTML = '<span class="da-loading"></span> Investigando y redactando informe...';
+  try {
+    const r = await fetch(API + '/report/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ sid, topic, depth })
+    });
+    const d = await r.json();
+    if(d.success){
+      out.innerHTML = mdRender(d.content) +
+        `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center">
+          <span style="color:var(--text2);font-size:11px;flex:1">📊 ${d.words} palabras</span>
+          <button class="da-btn ghost" style="padding:6px 12px;font-size:12px" onclick="daCopyReport()">📋 Copiar</button>
+          <button class="da-btn ghost" style="padding:6px 12px;font-size:12px" onclick="daDownloadReport('${d.id}')">⬇️ MD</button>
+         </div>`;
+      window._daLastReport = d.content;
+      toast('✅ Informe generado');
+    } else {
+      out.innerHTML = '<span style="color:var(--red)">❌ ' + (d.error || 'Error') + '</span>';
+    }
+  } catch(e){
+    out.innerHTML = '<span style="color:var(--red)">❌ Error de conexión</span>';
+  }
+}
+
+function daCopyReport(){
+  if(!window._daLastReport) return;
+  navigator.clipboard.writeText(window._daLastReport).then(()=>toast('📋 Copiado'));
+}
+
+function daDownloadReport(id){
+  if(!window._daLastReport) return;
+  const blob = new Blob([window._daLastReport], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (id || 'report') + '.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function daLoadReports(){
+  const out = document.getElementById('daRepOut');
+  out.innerHTML = '<span class="da-loading"></span> Cargando...';
+  try {
+    const r = await fetch(API + '/report/list?sid=' + sid);
+    const d = await r.json();
+    if(!d.reports || !d.reports.length){
+      out.innerHTML = '<div style="color:var(--text2);text-align:center;padding:20px">📬 Sin informes aún</div>';
+      return;
+    }
+    out.innerHTML = '<div class="rep-list">' + d.reports.slice().reverse().map(r =>
+      `<div class="rep-card" onclick='daShowReport(${JSON.stringify(r).replace(/\'/g, "&#39;")})'>
+        <div class="rc-title">📊 ${escForPanel(r.topic)}</div>
+        <div class="rc-meta">${r.created} · ${r.depth} · ${r.words} palabras</div>
+      </div>`
+    ).join('') + '</div>';
+  } catch(e){
+    out.innerHTML = '<span style="color:var(--red)">❌ Error</span>';
+  }
+}
+
+function daShowReport(r){
+  window._daLastReport = r.content;
+  document.getElementById('daRepOut').innerHTML = mdRender(r.content) +
+    `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px">
+       <button class="da-btn ghost" style="padding:6px 12px;font-size:12px" onclick="daCopyReport()">📋 Copiar</button>
+       <button class="da-btn ghost" style="padding:6px 12px;font-size:12px" onclick="daLoadReports()">⬅️ Volver</button>
+     </div>`;
+}
+
+/* ---------- WORKFLOWS ---------- */
+function daAddStep(){
+  daWFStepCount++;
+  const div = document.createElement('div');
+  div.className = 'wf-step';
+  div.innerHTML = `
+    <div class="wf-num">${daWFStepCount}</div>
+    <select class="wf-type">
+      <option value="search">🔍 Búsqueda web</option>
+      <option value="analyze">📊 Analizar</option>
+      <option value="summarize">📌 Resumir</option>
+      <option value="translate">🌍 Traducir</option>
+      <option value="code">💻 Generar código</option>
+      <option value="execute">⚡ Ejecutar Python</option>
+      <option value="report">📊 Informe</option>
+      <option value="email_draft">✉️ Redactar email</option>
+    </select>
+    <input class="wf-input" placeholder="Entrada (usa {{prev}} para encadenar)">
+    <button class="wf-del" onclick="this.parentElement.remove();daRenumber()">×</button>
+  `;
+  document.getElementById('daWFSteps').appendChild(div);
+}
+function daRenumber(){
+  document.querySelectorAll('#daWFSteps .wf-step').forEach((s,i)=>{
+    s.querySelector('.wf-num').textContent = i+1;
+  });
+  daWFStepCount = document.querySelectorAll('#daWFSteps .wf-step').length;
+}
+
+async function daSaveWF(){
+  const name = document.getElementById('daWFName').value.trim();
+  const steps = [...document.querySelectorAll('#daWFSteps .wf-step')].map(s => ({
+    type: s.querySelector('.wf-type').value,
+    input: s.querySelector('.wf-input').value.trim()
+  })).filter(s => s.input);
+  if(!steps.length){ toast('⚠️ Añade al menos un paso con entrada'); return; }
+  try {
+    const r = await fetch(API + '/workflow', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ sid, name, steps })
+    });
+    const d = await r.json();
+    if(d.success){ toast('💾 Workflow guardado'); daLoadWFs(); }
+  } catch(e){ toast('❌ Error'); }
+}
+
+async function daLoadWFs(){
+  try {
+    const r = await fetch(API + '/workflow?sid=' + sid);
+    const d = await r.json();
+    const list = document.getElementById('daWFList');
+    if(!d.workflows || !d.workflows.length){
+      list.innerHTML = '<div style="color:var(--text2);text-align:center;padding:14px;font-size:12px">Sin workflows guardados</div>';
+      return;
+    }
+    list.innerHTML = d.workflows.map(w =>
+      `<div class="wf-item">
+        <div style="font-size:22px">⚙️</div>
+        <div style="flex:1">
+          <div class="wf-name">${escForPanel(w.name)}</div>
+          <div class="wf-meta">${w.steps.length} pasos · ${w.runs || 0} ejecuciones · ${w.last_run || 'nunca ejecutado'}</div>
+        </div>
+        <button class="da-btn" style="padding:6px 12px;font-size:12px" onclick="daRunWF('${w.id}')">▶️ Ejecutar</button>
+        <button class="da-btn danger" style="padding:6px 10px;font-size:12px" onclick="daDelWF('${w.id}')">🗑️</button>
+      </div>`
+    ).join('');
+  } catch(e){}
+}
+
+async function daRunWF(id){
+  const out = document.getElementById('daWFOut');
+  out.innerHTML = '<span class="da-loading"></span> Ejecutando workflow... puede tardar';
+  try {
+    const r = await fetch(API + '/workflow/run', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ sid, id })
+    });
+    const d = await r.json();
+    if(d.success){
+      out.innerHTML = mdRender(d.logs);
+      toast('✅ ' + d.steps_run + ' pasos ejecutados');
+      daLoadWFs();
+    } else {
+      out.innerHTML = '<span style="color:var(--red)">❌ ' + (d.error||'Error') + '</span>';
+    }
+  } catch(e){ out.innerHTML = '<span style="color:var(--red)">❌ Error</span>'; }
+}
+
+async function daDelWF(id){
+  if(!confirm('¿Eliminar workflow?')) return;
+  await fetch(API + '/workflow', {
+    method: 'DELETE', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ sid, id })
+  });
+  daLoadWFs();
+  toast('🗑️ Eliminado');
+}
+
+/* ---------- INTEGRATIONS ---------- */
+async function daLoadIntegrations(){
+  const grid = document.getElementById('daIntGrid');
+  grid.innerHTML = '<div style="color:var(--text2);padding:14px"><span class="da-loading"></span> Cargando...</div>';
+  try {
+    const r = await fetch(API + '/integrations?sid=' + sid);
+    const d = await r.json();
+    grid.innerHTML = d.integrations.map(i =>
+      `<div class="int-card ${i.connected?'conn':''}" onclick="daToggleInt('${i.key}', ${i.connected})">
+        <span class="int-status">${i.connected ? 'Conectado' : 'Conectar'}</span>
+        <div class="int-icon">${i.icon}</div>
+        <div class="int-name">${i.name}</div>
+        <div class="int-cat">${i.category}</div>
+      </div>`
+    ).join('');
+  } catch(e){ grid.innerHTML = '<span style="color:var(--red)">❌ Error</span>'; }
+}
+
+async function daToggleInt(key, isConn){
+  try {
+    const endpoint = isConn ? '/integrations/disconnect' : '/integrations/connect';
+    const r = await fetch(API + endpoint, {
+      method: 'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ sid, key })
+    });
+    const d = await r.json();
+    if(d.success){
+      toast(isConn ? '🔌 Desconectado' : '✅ Conectado');
+      daLoadIntegrations();
+    }
+  } catch(e){ toast('❌ Error'); }
+}
+
+/* ---------- Markdown renderer ligero para paneles ---------- */
+function mdRender(txt){
+  if(!txt) return '';
+  let s = escForPanel(txt);
+  // code blocks
+  s = s.replace(/```(\w+)?\n([\s\S]*?)```/g, (m,l,c)=>`<pre><code>${c}</code></pre>`);
+  // inline code
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // headings
+  s = s.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  s = s.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  s = s.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  // bold / italic
+  s = s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  s = s.replace(/(^|\W)\*([^*]+)\*/g, '$1<i>$2</i>');
+  // lists
+  s = s.replace(/^[\-\*] (.+)$/gm, '• $1');
+  // tables (very simple)
+  s = s.replace(/((?:\|[^\n]+\|\n)+)/g, (block)=>{
+    const rows = block.trim().split('\n').map(r=>r.split('|').slice(1,-1));
+    if(rows.length<2) return block;
+    const head = rows[0].map(c=>`<th>${c.trim()}</th>`).join('');
+    const body = rows.slice(2).map(r=>'<tr>'+r.map(c=>`<td>${c.trim()}</td>`).join('')+'</tr>').join('');
+    return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  });
+  return s.replace(/\n/g,'<br>');
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeDA();
+});
+// Drag & drop archivos en analyzer
+(function(){
+  const d = document.getElementById('daDrop');
+  if(!d) return;
+  ['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('drag')}));
+  ['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('drag')}));
+  d.addEventListener('drop', e=>{
+    const f = e.dataTransfer.files[0];
+    if(f){ document.getElementById('daFile').files = e.dataTransfer.files; daFileSel({target:{files:[f]}}); }
+  });
+})();
+
 </script>
 
 </body>
