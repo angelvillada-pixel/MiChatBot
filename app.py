@@ -56,7 +56,32 @@ except Exception as _e:
     _nx = _imggen = _uprof = _nxroutes = None
     _NX_OK = False
 
-DEEPNOVA_VERSION = "4.0-ultra-neurocore-x"  # override a v4 Ultra
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v5 — Sesiones persistentes (chat_sessions.py)
+# ══════════════════════════════════════════
+try:
+    from chat_sessions import session_manager as _sess_mgr
+    _SESS_OK = True
+    print("[sessions] ✓ módulo cargado")
+except Exception as _e:
+    print(f"[sessions] no disponible: {_e}")
+    _sess_mgr = None
+    _SESS_OK = False
+
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v5 — OAuth 2.0 real (oauth_manager.py)
+# ══════════════════════════════════════════
+try:
+    from oauth_manager import oauth_mgr, OAUTH_CONFIGS
+    _OAUTH_OK = True
+    print("[oauth] ✓ módulo cargado")
+except Exception as _e:
+    print(f"[oauth] no disponible: {_e}")
+    oauth_mgr = None
+    OAUTH_CONFIGS = {}
+    _OAUTH_OK = False
+
+DEEPNOVA_VERSION = "5.0-opus-deepnova"  # override a v5 Opus DeepNova
 
 app = Flask(__name__)
 CORS(app, expose_headers=["X-Request-Id", "X-DeepNova-Version", "X-Elapsed-Ms"])
@@ -123,6 +148,11 @@ MODELS = {
     "creative":"groq/compound",
     "vision":  "meta-llama/llama-4-scout-17b-16e-instruct",
 }
+
+# ══════════════════════════════════════════
+# 🆕 v5 · Perfil cognitivo Opus 4.7 (extendido) – usado para el system prompt
+# Se construye DESPUÉS de definir SYSTEM_BASE.
+# ══════════════════════════════════════════
 
 # ══════════════════════════════════════════
 # PERSONALIDAD DEEPNOVA
@@ -217,6 +247,19 @@ REGLAS DE EJECUCIÓN OBLIGATORIAS:
    - Sin paredes de texto, sin relleno
    - Ve al grano, entrega valor real inmediato
    - No expliques lo obvio"""
+
+# ══════════════════════════════════════════
+# 🆕 v5 · SYSTEM_BASE_EXTENDED — inyecta el perfil cognitivo Opus 4.7
+# definido en neurocore_x.OPUS_COGNITIVE_PROFILE. Si NeuroCore-X no está
+# disponible, hace fallback transparente a SYSTEM_BASE original.
+# ══════════════════════════════════════════
+try:
+    from neurocore_x import OPUS_COGNITIVE_PROFILE as _OPUS_PROFILE
+    SYSTEM_BASE_EXTENDED = SYSTEM_BASE + "\n\n" + _OPUS_PROFILE
+    print("[v5] ✓ SYSTEM_BASE_EXTENDED con perfil cognitivo Opus 4.7")
+except Exception as _opus_err:
+    print(f"[v5] OPUS_COGNITIVE_PROFILE no disponible: {_opus_err}")
+    SYSTEM_BASE_EXTENDED = SYSTEM_BASE
 
 # ══════════════════════════════════════════
 # MEMORIA PERMANENTE
@@ -883,7 +926,7 @@ def detect_modes(msg):
     return modes
 
 def build_unified_system(modes, web_ctx="", mem_ctx="", lang="español", knowledge_ctx=""):
-    system = SYSTEM_BASE + mem_ctx + knowledge_ctx
+    system = SYSTEM_BASE_EXTENDED + mem_ctx + knowledge_ctx
     mode_instructions = []
 
     if "code" in modes:
@@ -1264,7 +1307,7 @@ def chat():
                 query=msg,
                 llm_call=_llm_call,
                 fast_llm=_fast_llm,
-                base_system=SYSTEM_BASE + profile_block,
+                base_system=SYSTEM_BASE_EXTENDED + profile_block,
                 context="",
                 memory=mem_ctx,
             )
@@ -1451,6 +1494,24 @@ def chat():
         extract_memory(sid, msg)
         save_history(sid, msg, response, model, modes)
         auto_learn(sid, msg, response)
+
+        # 🆕 v5 · Persistir mensajes en la sesión persistente si viene session_id válido.
+        #   Acepta tanto 'session_id' como 'session_id_external' (compat con el wrapper
+        #   JS de window.fetch que inyecta el id de la sesión persistente sin tocar la
+        #   sesión lógica original 'convs[sid]'.
+        try:
+            sess_id_in = (
+                str(data.get("session_id_external", "") or "").strip()
+                or str(data.get("session_id", "") or "").strip()
+            )
+            if _SESS_OK and _sess_mgr is not None and sess_id_in.startswith("sess_"):
+                _sess_mgr.add_message(sess_id_in, "user", msg)
+                _sess_mgr.add_message(
+                    sess_id_in, "assistant", response,
+                    {"model": model, "modes": modes}
+                )
+        except Exception as _persist_err:
+            logger.warning("persistencia /chat warn: %s", _persist_err)
 
         return jsonify({
             "response":      response,
@@ -2654,6 +2715,134 @@ def _e429(e):
     return jsonify({"error": "rate_limit", "retry_after": 60}), 429
 
 
+# ══════════════════════════════════════════════════════════════════════
+# 🆕 DEEPNOVA v5 · ENDPOINTS DE SESIONES PERSISTENTES (chat_sessions)
+# ══════════════════════════════════════════════════════════════════════
+@app.route("/sessions", methods=["GET"])
+def sessions_list():
+    uid = (request.args.get("uid") or "anon").strip()
+    if not _SESS_OK or _sess_mgr is None:
+        return jsonify({"sessions": []})
+    try:
+        return jsonify({"sessions": _sess_mgr.list_sessions(uid)})
+    except Exception as e:
+        logger.warning("sessions_list err: %s", e)
+        return jsonify({"sessions": [], "error": str(e)}), 500
+
+
+@app.route("/sessions", methods=["POST"])
+def sessions_create():
+    if not _SESS_OK or _sess_mgr is None:
+        return jsonify({"error": "unavailable"}), 501
+    d = request.get_json(silent=True) or {}
+    sid = _sess_mgr.create_session(
+        user_id=(d.get("uid") or "anon").strip(),
+        title=d.get("title") or "Nueva conversación",
+        mode=d.get("mode") or "chat",
+    )
+    return jsonify({"id": sid, "success": True})
+
+
+@app.route("/sessions/<sess_id>", methods=["GET", "PATCH", "DELETE"])
+def sessions_detail(sess_id):
+    if not _SESS_OK or _sess_mgr is None:
+        return jsonify({"error": "unavailable"}), 501
+    if request.method == "GET":
+        s = _sess_mgr.get_session(sess_id)
+        if not s:
+            return jsonify({"error": "not found"}), 404
+        msgs = _sess_mgr.get_messages(sess_id)
+        return jsonify({"session": {k: v for k, v in s.items() if k != "messages"},
+                        "messages": msgs})
+    if request.method == "PATCH":
+        d = request.get_json(silent=True) or {}
+        if "title" in d:
+            _sess_mgr.rename_session(sess_id, d.get("title", ""))
+        if d.get("pinned") is not None:
+            _sess_mgr.pin_session(sess_id)
+        return jsonify({"success": True})
+    if request.method == "DELETE":
+        return jsonify({"success": _sess_mgr.delete_session(sess_id)})
+    return jsonify({"error": "method"}), 405
+
+
+# ══════════════════════════════════════════════════════════════════════
+# 🆕 DEEPNOVA v5 · ENDPOINTS OAuth 2.0 (oauth_manager)
+# ══════════════════════════════════════════════════════════════════════
+@app.route("/oauth/authorize/<provider>")
+def oauth_authorize(provider):
+    from flask import redirect
+    if not _OAUTH_OK or oauth_mgr is None:
+        return jsonify({"error": "oauth unavailable"}), 501
+    sid = (request.args.get("sid") or "anon").strip()
+    url = oauth_mgr.generate_auth_url(provider, sid)
+    if not url:
+        return jsonify({
+            "error": f"Provider '{provider}' no configurado.",
+            "hint":  "Define CLIENT_ID/CLIENT_SECRET/REDIRECT_URI en variables de entorno.",
+        }), 400
+    return redirect(url)
+
+
+@app.route("/oauth/callback/<provider>")
+def oauth_callback(provider):
+    if not _OAUTH_OK or oauth_mgr is None:
+        return "<h2>OAuth no disponible</h2>", 501
+    code  = request.args.get("code", "")
+    state = request.args.get("state", "")
+    if not code:
+        return "<h2>Error: sin código de autorización</h2>", 400
+    result = oauth_mgr.exchange_code(provider, code, state)
+    if result.get("success"):
+        return (
+            "<!doctype html><meta charset='utf-8'>"
+            "<title>OAuth OK</title>"
+            "<body style='font-family:system-ui;background:#0d1117;color:#e2e8f0;"
+            "display:flex;align-items:center;justify-content:center;height:100vh;margin:0'>"
+            "<div style='text-align:center'>"
+            f"<h2>✅ {provider.title()} conectado</h2>"
+            "<p>Puedes cerrar esta ventana.</p></div></body>"
+            "<script>try{window.opener&&window.opener.postMessage("
+            f"{{type:'oauth_success',provider:'{provider}'}},'*')"
+            ";setTimeout(()=>window.close(),700)}catch(e){{}}</script>"
+        )
+    err = result.get("error", "unknown")
+    return (
+        "<!doctype html><meta charset='utf-8'>"
+        f"<title>OAuth error</title>"
+        "<body style='font-family:system-ui;background:#0d1117;color:#f87171;"
+        "display:flex;align-items:center;justify-content:center;height:100vh;margin:0'>"
+        f"<div style='text-align:center'><h2>❌ Error OAuth</h2><pre>{err}</pre></div></body>"
+    ), 400
+
+
+@app.route("/oauth/status")
+def oauth_status():
+    sid = (request.args.get("sid") or "anon").strip()
+    if not _OAUTH_OK or oauth_mgr is None:
+        return jsonify({"integrations": [], "available": False})
+    connected = oauth_mgr.list_connected(sid)
+    catalog = []
+    for key, cfg in OAUTH_CONFIGS.items():
+        catalog.append({
+            "key": key,
+            "connected":  key in connected,
+            "configured": bool(cfg.get("client_id")),
+        })
+    return jsonify({"integrations": catalog, "available": True})
+
+
+@app.route("/oauth/disconnect", methods=["POST"])
+def oauth_disconnect():
+    if not _OAUTH_OK or oauth_mgr is None:
+        return jsonify({"success": False, "error": "unavailable"}), 501
+    d = request.get_json(silent=True) or {}
+    ok = oauth_mgr.disconnect(
+        (d.get("sid") or "anon").strip(),
+        (d.get("provider") or "").strip(),
+    )
+    return jsonify({"success": ok})
+
 
 # ══════════════════════════════════════════
 # 🆕 DEEPNOVA v4 ULTRA — NeuroCore-X routes registration
@@ -2666,7 +2855,7 @@ if _NX_OK and _nxroutes is not None:
             app,
             llm_call=_llm_call,
             fast_llm=_fast_llm,
-            base_system=SYSTEM_BASE,
+            base_system=SYSTEM_BASE_EXTENDED,
             memory_getter=get_memory_prompt,
         )
         logger.info("🌟 NeuroCore-X routes registradas (ULTRA / IMAGE / PROFILE / STREAM)")
