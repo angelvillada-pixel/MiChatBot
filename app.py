@@ -82,6 +82,7 @@ except Exception as _e:
     _OAUTH_OK = False
 
 DEEPNOVA_VERSION = "5.0-opus-deepnova"  # override a v5 Opus DeepNova
+DEEPNOVA_VERSION = "6.0-neurocore-x"     # 🆕 v6 NeuroCore-X PRO (override final)
 
 app = Flask(__name__)
 CORS(app, expose_headers=["X-Request-Id", "X-DeepNova-Version", "X-Elapsed-Ms"])
@@ -2861,6 +2862,18 @@ if _NX_OK and _nxroutes is not None:
         logger.info("🌟 NeuroCore-X routes registradas (ULTRA / IMAGE / PROFILE / STREAM)")
     except Exception as _e:
         logger.warning("NeuroCore-X no se pudo registrar: %s", _e)
+
+
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v6.0 — Patch aditivo (nova_models, plugins, plans, stats, PWA)
+# 100% no-destructivo: si no está disponible, simplemente se omite.
+# ══════════════════════════════════════════
+try:
+    from app_patch import register_v6
+    register_v6(app)
+    logger.info("✓ DeepNova v6.0 patch cargado (modelos Nova, plugins, plans, stats)")
+except Exception as _e_v6:
+    logger.warning("[v6] patch no disponible: %s", _e_v6)
 
 
 # 🚀 ARRANQUE
