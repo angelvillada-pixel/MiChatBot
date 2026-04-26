@@ -3154,8 +3154,127 @@ html,body{height:100%;background:var(--nova-bg);color:var(--text);font-family:va
 
 </style>
 
+
+<!-- 🆕 v6.1 · SPLASH SCREEN + LOGO FIJO + OCULTAR FLOATING BUTTON -->
+<style id="nova-splash-fixes-v6">
+/* ══ SPLASH SCREEN (al abrir la app) ══ */
+#novaSplash{
+  position:fixed; inset:0; z-index:99999;
+  background:#0a0a0f;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:24px;
+  transition:opacity .7s ease, transform .7s ease;
+  font-family:'Syne','DM Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+#novaSplash.hidden{ opacity:0; transform:scale(1.05); pointer-events:none; }
+
+#novaSplash .splash-logo{
+  width:120px; height:120px; border-radius:32px;
+  background:linear-gradient(135deg,#7c6dfa 0%, #a78bfa 50%, #06b6d4 100%);
+  display:flex; align-items:center; justify-content:center;
+  font-size:62px; font-weight:800; color:#fff;
+  letter-spacing:-2px; overflow:hidden; position:relative;
+  animation:novaSplashPulse 2s ease-in-out infinite;
+  box-shadow:0 0 60px rgba(124,109,250,0.5), 0 0 120px rgba(124,109,250,0.2);
+  font-family:'Syne','DM Sans',sans-serif;
+}
+#novaSplash .splash-logo::after{
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  background:radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 55%);
+  pointer-events:none;
+}
+@keyframes novaSplashPulse{
+  0%,100%{ box-shadow:0 0 60px rgba(124,109,250,0.5), 0 0 120px rgba(124,109,250,0.2); transform:scale(1);}
+  50%   { box-shadow:0 0 90px rgba(124,109,250,0.75), 0 0 160px rgba(124,109,250,0.4); transform:scale(1.04);}
+}
+#novaSplash .splash-name{
+  font-size:38px; font-weight:800; letter-spacing:-1px;
+  background:linear-gradient(135deg,#fff 30%,#a78bfa 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+#novaSplash .splash-sub{
+  color:#9ca3af; font-size:13px; letter-spacing:2.5px;
+  text-transform:uppercase; font-weight:500;
+}
+#novaSplash .splash-bar{
+  width:200px; height:2px; background:#1f2937; border-radius:1px;
+  overflow:hidden; margin-top:8px;
+}
+#novaSplash .splash-fill{
+  height:100%; width:0;
+  background:linear-gradient(90deg,#7c6dfa,#06b6d4);
+  border-radius:1px;
+  animation:novaSplashLoad 1.8s ease forwards;
+}
+@keyframes novaSplashLoad{
+  0%{width:0} 60%{width:70%} 100%{width:100%}
+}
+#novaSplash .splash-dots{ display:flex; gap:8px; margin-top:4px; }
+#novaSplash .splash-dot{
+  width:6px; height:6px; border-radius:50%;
+  background:#374151; animation:novaSplashDot 1.2s ease-in-out infinite;
+}
+#novaSplash .splash-dot:nth-child(1){ animation-delay:0s; }
+#novaSplash .splash-dot:nth-child(2){ animation-delay:.15s; background:#7c6dfa; }
+#novaSplash .splash-dot:nth-child(3){ animation-delay:.3s; background:#a78bfa; }
+@keyframes novaSplashDot{
+  0%,80%,100%{ transform:scale(1); opacity:.4 }
+  40%        { transform:scale(1.4); opacity:1 }
+}
+
+/* ══ OCULTAR BOTÓN FLOTANTE (robot) ══ */
+.fl, #fl, .ft{
+  display:none !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+
+/* ══ LOGO FIJO "N" EN SIDEBAR (sustituye al robot) ══ */
+.logo-box{
+  background:linear-gradient(135deg,#7c6dfa 0%, #a78bfa 50%, #06b6d4 100%) !important;
+  position:relative;
+  overflow:hidden;
+}
+.logo-box::before{
+  content:'N';
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne','DM Sans',system-ui,sans-serif;
+  font-weight:800; color:#fff;
+  font-size:26px; letter-spacing:-1px;
+  z-index:1;
+  text-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.logo-box::after{
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  background:radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 55%);
+  z-index:2; pointer-events:none;
+}
+/* Si el usuario sube una imagen real, mostrarla por encima de la N */
+.logo-box img.on{
+  position:relative; z-index:3;
+  display:block !important;
+}
+/* Ocultar el emoji robot si lo hubiera */
+.logo-box .logo-emoji{ display:none !important; }
+</style>
+
 </head>
 <body>
+<!-- 🆕 v6.1 · SPLASH SCREEN (animación al abrir la app) -->
+<div id="novaSplash" aria-hidden="true">
+  <div class="splash-logo">N</div>
+  <div class="splash-name">DeepNova</div>
+  <div class="splash-sub">NeuroCore-X · God-Tier Agent</div>
+  <div class="splash-bar"><div class="splash-fill"></div></div>
+  <div class="splash-dots">
+    <div class="splash-dot"></div>
+    <div class="splash-dot"></div>
+    <div class="splash-dot"></div>
+  </div>
+</div>
+
 
 <div class="bg-fx">
   <div class="orb o1"></div>
@@ -6334,6 +6453,26 @@ console.log('%c⚡ NeuroCore-X UI ready · ULTRA = Ctrl+Shift+U','color:#8b5cf6;
         .catch(function(err){ console.warn('SW registration failed:', err); });
     });
   }
+})();
+</script>
+
+
+<!-- 🆕 v6.1 · Splash hide on load -->
+<script>
+(function(){
+  function hideSplash(){
+    var s = document.getElementById('novaSplash');
+    if(!s) return;
+    s.classList.add('hidden');
+    setTimeout(function(){ s.style.display='none'; }, 700);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(hideSplash, 1800);
+  } else {
+    window.addEventListener('load', function(){ setTimeout(hideSplash, 1800); });
+  }
+  // Failsafe: si algo se traba, ocultar a los 6s pase lo que pase
+  setTimeout(hideSplash, 6000);
 })();
 </script>
 
