@@ -1,0 +1,19 @@
+{
+  "name": "DeepNova",
+  "short_name": "DeepNova",
+  "description": "DeepNova v6 · NeuroCore-X · God-Tier AI Agent",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0f",
+  "theme_color": "#6366f1",
+  "scope": "/",
+  "lang": "es",
+  "categories": ["productivity", "ai", "utilities"],
+  "icons": [
+    { "src": "/icon-16.png",  "sizes": "16x16",   "type": "image/png" },
+    { "src": "/icon-32.png",  "sizes": "32x32",   "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/favicon.svg",  "sizes": "any",     "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
