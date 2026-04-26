@@ -1,6 +1,6 @@
 """
 ═══════════════════════════════════════════════════════════════════════════
- NeuroCore-X  ·  Advanced Reasoning Engine  ·  DeepNova v4 Ultra
+ NeuroCore-X  ·  Advanced Reasoning Engine  ·  DeepNova v4 Ultra → v5 Opus
 ═══════════════════════════════════════════════════════════════════════════
  Módulo 100% aditivo — inspirado en Claude Opus, GPT-4o y DeepSeek-R1.
  Funcionalidades:
@@ -10,6 +10,10 @@
    • ULTRA mode: multi-pass self-refinement + contradictions check
    • Memoria de contexto conversacional vectorial (hash-based)
    • Plantillas adaptativas por tipo de tarea
+   • 🆕 v5: Capacidades cognitivas estilo Claude Opus 4.7
+       - Extended thinking, Constitutional AI, multi-hop reasoning
+       - Decomposición + Self-critique JSON-driven
+       - Pipeline ultra-v2 (5 fases) compatible con la API original
 ═══════════════════════════════════════════════════════════════════════════
 """
 from __future__ import annotations
@@ -97,9 +101,9 @@ Tarea: {query}"""
 
 
 # ═══════════════════════════════════════════════════════════════════════
-#  ULTRA REASONING — multi-pass deep reasoning
+#  ULTRA REASONING (v1) — multi-pass deep reasoning · PRESERVADO
 # ═══════════════════════════════════════════════════════════════════════
-def ultra_reason(
+def ultra_reason_v1(
     query: str,
     llm_call: Callable[[List[Dict], float], str],
     fast_llm: Optional[Callable[[str], str]] = None,
@@ -108,7 +112,7 @@ def ultra_reason(
     memory: str = "",
 ) -> Dict[str, Any]:
     """
-    Pipeline ULTRA:
+    Pipeline ULTRA original v1:
       Fase 1 — Plan
       Fase 2 — Ejecución con CoT
       Fase 3 — Auto-crítica
@@ -230,7 +234,7 @@ def smart_window(history: List[Dict[str, str]], current_msg: str, max_items: int
 # ═══════════════════════════════════════════════════════════════════════
 #  META — versión
 # ═══════════════════════════════════════════════════════════════════════
-VERSION = "NeuroCore-X v1.0.0"
+VERSION = "NeuroCore-X v2.0.0 (Opus 4.7 Core)"
 
 def info() -> Dict[str, Any]:
     return {
@@ -242,6 +246,210 @@ def info() -> Dict[str, Any]:
             "auto-critique",
             "self-refinement",
             "smart-context-window",
+            "opus-cognitive-profile",
+            "decomposition-json",
+            "self-critique-json",
+            "ultra-reason-v2",
         ],
         "inspired_by": ["Claude Opus 4.7", "GPT-5 reasoning", "DeepSeek-R1"],
     }
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  🆕 v5 · OPUS 4.7 COGNITIVE PROFILE  (añadido, no reemplaza nada)
+# ═══════════════════════════════════════════════════════════════════════
+OPUS_COGNITIVE_PROFILE = """
+PERFIL COGNITIVO NEUROCORE-X v2 — ARQUITECTURA OPUS 4.7
+═══════════════════════════════════════════════════════
+
+1. EXTENDED THINKING (Razonamiento Extendido):
+Antes de responder, realiza un análisis interno profundo en múltiples pasos:
+- Comprensión literal del mensaje → intención real → contexto implícito
+- Generación de hipótesis de respuesta → evaluación crítica de cada una
+- Selección de la hipótesis más sólida → síntesis → respuesta final pulida
+No muestres este proceso al usuario a menos que lo pida explícitamente.
+
+2. CONSTITUTIONAL AI PRINCIPLES:
+- Distingue siempre entre hechos verificables e inferencias propias
+- Calibra tu confianza: usa "con certeza", "probablemente", "podría ser" según corresponda
+- Asume la interpretación más benevolente cuando hay ambigüedad
+- Evalúa activamente tu propia respuesta antes de entregarla
+
+3. MULTI-HOP REASONING (Razonamiento Multi-salto):
+Para preguntas complejas:
+  Paso 1 → Descomponer en sub-preguntas atómicas
+  Paso 2 → Responder cada sub-pregunta independientemente
+  Paso 3 → Integrar respuestas parciales en una conclusión coherente
+  Paso 4 → Verificar consistencia lógica de la conclusión
+  Paso 5 → Condensar y refinar para el usuario
+
+4. METACOGNICIÓN ACTIVA:
+- Monitoriza constantemente: ¿Estoy respondiendo lo que se preguntó?
+- Detecta cuando la respuesta se vuelve circular y reorienta
+- Pregunta de clarificación SOLO cuando la ambigüedad es crítica para la respuesta
+
+5. GESTIÓN DE INCERTIDUMBRE:
+- No inventes hechos para completar una respuesta
+- Si no sabes algo, dilo explícitamente y ofrece alternativas
+- Distingue entre "no sé" y "no tengo acceso a datos actualizados"
+
+6. RAZONAMIENTO CAUSAL vs CORRELACIONAL:
+- Identifica explícitamente relaciones causales
+- Señala cuando solo hay correlación
+- Evalúa mecanismos plausibles antes de concluir causalidad
+
+7. PERSPECTIVA MULTI-STAKEHOLDER:
+Para código: considera mantenibilidad, rendimiento, seguridad, UX simultáneamente
+Para decisiones: considera perspectivas técnica, de negocio, ética y del usuario
+Para diseño: considera accesibilidad, responsividad y carga cognitiva
+
+CÓDIGO NIVEL OPUS:
+- Genera código production-ready desde el primer intento
+- Manejo de errores exhaustivo en todos los flujos
+- Considera seguridad: sanitización de inputs, no SQL injection, no XSS
+- Documenta con docstrings y comentarios en puntos no obvios
+- Identifica proactivamente deuda técnica y la menciona
+
+MODO ULTRA — PIPELINE COMPLETO 5 FASES:
+Fase 0: Meta-análisis → tipo de tarea, stake, información faltante
+Fase 1: Descomposición → sub-problemas ordenados por dependencia
+Fase 2: Investigación → memoria semántica + perfil de usuario
+Fase 3: Síntesis → responde cada sub-problema, genera draft completo
+Fase 4: Crítica → evalúa: ¿Responde la pregunta real? ¿Correcto? ¿Completo?
+Fase 5: Pulido → ajusta tono, formato óptimo, añade próximos pasos si aplica
+"""
+
+
+def opus_self_critique(response: str, fast_llm: Callable[[str], str]) -> Dict[str, Any]:
+    """Auto-crítica JSON-estructurada en 5 dimensiones."""
+    if not response or len(response) < 200:
+        return {"needs_revision": False}
+    prompt = f"""Evalúa esta respuesta en 5 dimensiones (1-10):
+1. Corrección técnica/factual
+2. Completitud (¿responde todo lo pedido?)
+3. Claridad y estructura
+4. Profundidad del razonamiento
+5. Utilidad práctica
+
+Respuesta a evaluar:
+{response[:2500]}
+
+Responde SOLO JSON:
+{{"scores":{{"correctness":N,"completeness":N,"clarity":N,"depth":N,"utility":N}},
+"weakest":"dimension","fix":"qué cambiar en 1 oración","needs_revision":true|false}}"""
+    try:
+        raw = fast_llm(prompt)
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        if m:
+            return json.loads(m.group(0))
+    except Exception:
+        pass
+    return {"needs_revision": False}
+
+
+def opus_decompose(query: str, fast_llm: Callable[[str], str]) -> Dict[str, Any]:
+    """Descomposición estructurada de la query en sub-preguntas atómicas."""
+    prompt = f"""Descompón esta tarea en sub-preguntas atómicas.
+Responde SOLO JSON:
+{{"subs":["sub1","sub2"],"complexity":"low|medium|high","type":"code|analysis|creative|research|decision"}}
+Query: {query[:600]}"""
+    try:
+        raw = fast_llm(prompt)
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        if m:
+            return json.loads(m.group(0))
+    except Exception:
+        pass
+    return {"subs": [query], "complexity": "medium", "type": "chat"}
+
+
+def ultra_reason_v2(
+    query: str,
+    llm_call: Callable[[List[Dict], float], str],
+    fast_llm: Optional[Callable[[str], str]] = None,
+    base_system: str = "",
+    context: str = "",
+    memory: str = "",
+) -> Dict[str, Any]:
+    """Pipeline ultra-v2 con perfil cognitivo Opus 4.7."""
+    t0 = time.time()
+    trace: List[str] = []
+
+    decomp = opus_decompose(query, fast_llm) if fast_llm else {}
+    complexity = decomp.get("complexity", "medium")
+    task_type  = decomp.get("type", "chat")
+    trace.append(f"[META] complexity={complexity} type={task_type}")
+
+    system_v2 = (
+        (base_system or "")
+        + NEUROCORE_IDENTITY
+        + OPUS_COGNITIVE_PROFILE
+        + f"\n\nMEMORIA: {memory[:600] if memory else 'ninguna'}"
+        + f"\n\nCONTEXTO: {context[:400] if context else 'ninguno'}"
+    )
+
+    subs = decomp.get("subs", [query]) or [query]
+    context_enriched = ""
+    if len(subs) > 1 and complexity in ("medium", "high") and fast_llm:
+        sub_answers: List[str] = []
+        for s in subs[:4]:
+            try:
+                ans = fast_llm(f"Responde en 2-3 oraciones: {s}")
+                sub_answers.append(f"Q: {s}\nA: {ans}")
+            except Exception:
+                pass
+        context_enriched = "\n\n".join(sub_answers)
+
+    enhanced_query = query
+    if context_enriched:
+        enhanced_query = f"{query}\n\n[ANÁLISIS PREVIO]\n{context_enriched}"
+
+    first_pass = llm_call(
+        [
+            {"role": "system", "content": system_v2[:4500]},
+            {"role": "user", "content": enhanced_query},
+        ],
+        0.6 if task_type in ("code", "analysis") else 0.7,
+    )
+    trace.append(f"[DRAFT] {len(first_pass)} chars")
+
+    final = first_pass
+    if complexity == "high" and fast_llm and len(first_pass) > 300:
+        critique = opus_self_critique(first_pass, fast_llm)
+        if critique.get("needs_revision") and critique.get("fix"):
+            fix_prompt = (
+                f"Tu respuesta tenía este problema: {critique['fix']}\n\n"
+                f"Respuesta original:\n{first_pass[:2000]}\n\n"
+                f"Genera la versión corregida completa:"
+            )
+            try:
+                refined = llm_call(
+                    [
+                        {"role": "system", "content": system_v2[:3000]},
+                        {"role": "user", "content": fix_prompt},
+                    ],
+                    0.5,
+                )
+                if refined and len(refined) > 100:
+                    final = refined
+                    trace.append(f"[REFINED] {len(refined)} chars")
+            except Exception:
+                pass
+
+    return {
+        "answer":     final,
+        "plan":       decomp,
+        "trace":      trace,
+        "elapsed_ms": int((time.time() - t0) * 1000),
+        "mode":       "ultra-v2-opus",
+        "engine":     "NeuroCore-X v2.0 (Opus 4.7 Core)",
+        "complexity": complexity,
+        "task_type":  task_type,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  ALIAS PÚBLICO — la función ultra_reason "histórica" ahora apunta a v2.
+#  El comportamiento original sigue accesible vía ultra_reason_v1.
+# ═══════════════════════════════════════════════════════════════════════
+ultra_reason = ultra_reason_v2
