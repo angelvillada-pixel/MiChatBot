@@ -1,5 +1,5 @@
 # ══════════════════════════════════════════════════════════════════════
-# DeepNova v3 PREMIUM — dependencias (optimizado para Railway <4GB)
+# DeepNova v5 PREMIUM — dependencias (optimizado para Railway <4GB)
 # ══════════════════════════════════════════════════════════════════════
 
 # Originales (DeepNova v1)
@@ -38,3 +38,10 @@ pillow>=10.0.0
 # ── v4 · NeuroCore-X (ULTRA reasoning + image-gen + user-profile) ──
 # Todas las dependencias ya incluidas arriba (requests, flask, pillow, numpy).
 # Pollinations.ai NO requiere API key. Hugging Face opcional via HF_TOKEN env.
+
+# ══════════════════════════════════════════════════════════════════════
+# 🆕 v5 DEEPNOVA · OAuth 2.0 real + cifrado de tokens (Fernet AES-128)
+#   Necesario para oauth_manager.py (Google/GitHub/Slack tokens encriptados)
+#   Si no se instala, oauth_manager cae a base64 (NO recomendado en producción).
+# ══════════════════════════════════════════════════════════════════════
+cryptography>=41.0.0
