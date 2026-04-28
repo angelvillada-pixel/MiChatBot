@@ -45,3 +45,18 @@ pillow>=10.0.0
 #   Si no se instala, oauth_manager cae a base64 (NO recomendado en producción).
 # ══════════════════════════════════════════════════════════════════════
 cryptography>=41.0.0
+
+# ═════════════════════════════════════════════════════════════════════
+# 🆕 v7 MEJORAS IA — módulos profesionales 100% aditivos
+#   learning_engine, feedback_loop, multi_hop_reasoner, domain_knowledge,
+#   code_optimizer, task_automator, agent_swarm, dev_tools_integration
+#   improvements_patch (orquesta TODO con register_v7)
+#
+#   No requieren ninguna dependencia adicional obligatoria:
+#   usan stdlib + (opcionalmente) numpy/requests ya incluidos arriba.
+#   El optimizador de código usa solo `ast` y `tokenize` (stdlib).
+#   El swarm usa `concurrent.futures` (stdlib).
+# ═════════════════════════════════════════════════════════════════════
+
+# (Opcional) métricas del sistema en /api/v7/health avanzado
+psutil>=5.9.0
