@@ -82,7 +82,23 @@ except Exception as _e:
     _OAUTH_OK = False
 
 DEEPNOVA_VERSION = "5.0-opus-deepnova"  # override a v5 Opus DeepNova
-DEEPNOVA_VERSION = "6.0-neurocore-x"     # 🆕 v6 NeuroCore-X PRO (override final)
+DEEPNOVA_VERSION = "6.0-neurocore-x"     # 🆕 v6 NeuroCore-X PRO
+DEEPNOVA_VERSION = "7.0-mejoras-ia"      # 🆕 v7 mejoras de IA (override final)
+
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v7 — Módulos de mejoras IA (carga perezosa, opcional)
+#   Aprendizaje continuo, multi-hop reasoning, swarm, code optimizer, etc.
+#   100% aditivo: si alguno falla, el resto sigue funcionando.
+# ══════════════════════════════════════════
+try:
+    import learning_engine as _v7_le
+    import feedback_loop  as _v7_fl
+    _V7_LEARNING_OK = True
+    print("[v7] ✓ aprendizaje continuo cargado")
+except Exception as _e_v7l:
+    print(f"[v7] aprendizaje no disponible: {_e_v7l}")
+    _v7_le = _v7_fl = None
+    _V7_LEARNING_OK = False
 
 app = Flask(__name__)
 CORS(app, expose_headers=["X-Request-Id", "X-DeepNova-Version", "X-Elapsed-Ms"])
@@ -1445,6 +1461,22 @@ def chat():
     # System unificado
     system = build_unified_system(modes, web_ctx, mem_ctx, lang, knowledge_ctx)
 
+    # 🆕 v7 · Adaptación del system prompt a las preferencias aprendidas del usuario
+    if _V7_LEARNING_OK and _v7_le is not None:
+        try:
+            system = _v7_le.adapt_system_prompt(system, sid)
+        except Exception:
+            pass
+
+    # 🆕 v7 · Inyección de contexto de dominio (finanzas, software, medicina, etc.)
+    try:
+        import domain_knowledge as _v7_dk
+        _dom_ctx = _v7_dk.get_domain_context(msg, max_domains=2)
+        if _dom_ctx:
+            system = system + "\n\n" + _dom_ctx
+    except Exception:
+        pass
+
     # Seleccionar modelo
     if len(modes) > 2 or "reason" in modes or "agent" in modes:
         model = MODELS["smart"]
@@ -1495,6 +1527,13 @@ def chat():
         extract_memory(sid, msg)
         save_history(sid, msg, response, model, modes)
         auto_learn(sid, msg, response)
+
+        # 🆕 v7 · Recuerda interacción para feedback adaptativo
+        if _V7_LEARNING_OK and _v7_fl is not None:
+            try:
+                _v7_fl.remember_interaction(sid, msg, response)
+            except Exception:
+                pass
 
         # 🆕 v5 · Persistir mensajes en la sesión persistente si viene session_id válido.
         #   Acepta tanto 'session_id' como 'session_id_external' (compat con el wrapper
@@ -2874,6 +2913,25 @@ try:
     logger.info("✓ DeepNova v6.0 patch cargado (modelos Nova, plugins, plans, stats)")
 except Exception as _e_v6:
     logger.warning("[v6] patch no disponible: %s", _e_v6)
+
+
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v7.0 — MEJORAS IA (aprendizaje, multi-hop, swarm, code, automation)
+# Una sola línea: registra TODOS los nuevos endpoints en /api/* (ver improvements_patch.py)
+# 100% aditivo · todos los módulos son tolerantes a fallos individuales.
+# ══════════════════════════════════════════
+try:
+    from improvements_patch import register_v7
+    register_v7(
+        app,
+        llm_call=_llm_call,
+        fast_llm=_fast_llm,
+        base_system=SYSTEM_BASE_EXTENDED,
+        memory_getter=get_memory_prompt,
+    )
+    logger.info("🧠 DeepNova v7.0 mejoras IA cargadas (learning, multi-hop, swarm, code, macros)")
+except Exception as _e_v7:
+    logger.warning("[v7] mejoras IA no disponibles: %s", _e_v7)
 
 
 # 🚀 ARRANQUE
