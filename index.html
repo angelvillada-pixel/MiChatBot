@@ -6476,5 +6476,797 @@ console.log('%c⚡ NeuroCore-X UI ready · ULTRA = Ctrl+Shift+U','color:#8b5cf6;
 })();
 </script>
 
+
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     🆕 DEEPNOVA · PREMIUM UPGRADE LAYER (NeuroCore-X v7 · God-Tier)
+     ──────────────────────────────────────────────────────────────────────
+     ✅ NO modifica nada existente. Solo añade capas premium encima.
+     ✅ Selector de modelos individuales / combinado.
+     ✅ UI dinámica con módulos ocultables (panel control).
+     ✅ Sistema modular escalable (DNModules registry).
+     ✅ Animaciones premium, microinteracciones, feedback visual.
+     ✅ Listo para producción.
+     ════════════════════════════════════════════════════════════════════════ -->
+
+<style id="dn-premium-v7">
+/* ═══ DESIGN TOKENS PREMIUM (no override) ═══ */
+:root{
+  --dn7-glass: rgba(20, 24, 40, 0.55);
+  --dn7-glass-strong: rgba(15, 20, 35, 0.78);
+  --dn7-stroke: rgba(255,255,255,0.08);
+  --dn7-stroke-bright: rgba(255,255,255,0.16);
+  --dn7-glow: 0 0 0 1px rgba(99,102,241,0.25), 0 8px 32px rgba(99,102,241,0.18);
+  --dn7-glow-strong: 0 0 0 1px rgba(139,92,246,0.45), 0 16px 48px rgba(139,92,246,0.35);
+  --dn7-radius-lg: 18px;
+  --dn7-radius-md: 12px;
+  --dn7-radius-sm: 8px;
+  --dn7-ease: cubic-bezier(.4,0,.2,1);
+  --dn7-ease-out: cubic-bezier(.16,1,.3,1);
+  --dn7-spring: cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ═══ FAB PRINCIPAL (Centro de Control) ═══ */
+.dn7-fab{
+  position:fixed; right:20px; bottom:96px; z-index:9998;
+  width:54px; height:54px; border-radius:50%; cursor:pointer;
+  background:linear-gradient(135deg, var(--p,#6366f1), var(--p2,#8b5cf6));
+  box-shadow: var(--dn7-glow-strong);
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; color:#fff; border:none;
+  transition: transform .35s var(--dn7-spring), box-shadow .3s var(--dn7-ease);
+  animation: dn7-pulse 3s ease-in-out infinite;
+}
+.dn7-fab:hover{ transform: scale(1.12) rotate(8deg); }
+.dn7-fab:active{ transform: scale(.95); }
+.dn7-fab::after{
+  content:''; position:absolute; inset:-6px; border-radius:50%;
+  background:conic-gradient(from 0deg, transparent, rgba(139,92,246,.55), transparent);
+  animation: dn7-rotate 4s linear infinite; z-index:-1; opacity:.7;
+}
+@keyframes dn7-pulse{
+  0%,100%{ box-shadow: var(--dn7-glow-strong); }
+  50%{ box-shadow: 0 0 0 1px rgba(139,92,246,.7), 0 20px 64px rgba(139,92,246,.55); }
+}
+@keyframes dn7-rotate{ to{ transform: rotate(360deg); } }
+
+/* ═══ PANEL CENTRO DE CONTROL ═══ */
+.dn7-cp{
+  position:fixed; right:20px; bottom:160px; z-index:9999;
+  width:340px; max-height:72vh; overflow:hidden;
+  background: var(--dn7-glass-strong);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border:1px solid var(--dn7-stroke-bright);
+  border-radius: var(--dn7-radius-lg);
+  box-shadow: 0 24px 80px rgba(0,0,0,.6), var(--dn7-glow);
+  transform-origin: bottom right;
+  transform: scale(.85) translateY(20px); opacity:0; pointer-events:none;
+  transition: transform .4s var(--dn7-spring), opacity .25s var(--dn7-ease);
+  display:flex; flex-direction:column;
+}
+.dn7-cp.open{ transform: scale(1) translateY(0); opacity:1; pointer-events:auto; }
+.dn7-cp-head{
+  padding:14px 16px; display:flex; align-items:center; gap:10px;
+  border-bottom:1px solid var(--dn7-stroke);
+  background: linear-gradient(135deg, rgba(99,102,241,.12), rgba(139,92,246,.08));
+}
+.dn7-cp-head h4{
+  font-size:14px; font-weight:700; flex:1;
+  background:linear-gradient(90deg, #fff, #a5b4fc);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  letter-spacing:.3px;
+}
+.dn7-cp-head .dn7-x{
+  width:28px; height:28px; border-radius:8px; border:none; cursor:pointer;
+  background:rgba(255,255,255,.06); color:#cbd5e1; font-size:14px;
+  transition: all .2s var(--dn7-ease);
+}
+.dn7-cp-head .dn7-x:hover{ background:rgba(239,68,68,.2); color:#fca5a5; transform:rotate(90deg); }
+.dn7-cp-body{ overflow-y:auto; padding:10px; gap:10px; display:flex; flex-direction:column; }
+.dn7-cp-body::-webkit-scrollbar{ width:6px; }
+.dn7-cp-body::-webkit-scrollbar-thumb{ background:rgba(99,102,241,.3); border-radius:3px; }
+
+/* ═══ TARJETA DE SECCIÓN ═══ */
+.dn7-sec{
+  background: rgba(255,255,255,.025);
+  border:1px solid var(--dn7-stroke);
+  border-radius: var(--dn7-radius-md);
+  padding:10px 12px;
+  transition: border-color .25s var(--dn7-ease), background .25s var(--dn7-ease);
+}
+.dn7-sec:hover{ border-color: var(--dn7-stroke-bright); background: rgba(255,255,255,.04); }
+.dn7-sec-title{
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.8px;
+  color:var(--text2,#94a3b8); margin-bottom:8px; display:flex; align-items:center; gap:6px;
+}
+.dn7-sec-title .dn7-dot{ width:6px; height:6px; border-radius:50%; background:var(--p,#6366f1); box-shadow:0 0 8px var(--p,#6366f1); }
+
+/* ═══ SELECTOR DE MODELOS PREMIUM ═══ */
+.dn7-mode-tabs{
+  display:grid; grid-template-columns: 1fr 1fr; gap:4px;
+  background: rgba(0,0,0,.3); padding:3px; border-radius:10px; margin-bottom:8px;
+}
+.dn7-mode-tab{
+  padding:8px 4px; font-size:11px; font-weight:600; cursor:pointer;
+  border-radius:7px; text-align:center; transition:all .25s var(--dn7-ease);
+  color:var(--text2,#94a3b8); border:none; background:transparent;
+}
+.dn7-mode-tab.active{
+  background: linear-gradient(135deg, var(--p,#6366f1), var(--p2,#8b5cf6));
+  color:#fff; box-shadow: 0 4px 12px rgba(99,102,241,.4);
+}
+.dn7-models{ display:flex; flex-direction:column; gap:5px; }
+.dn7-model{
+  display:flex; align-items:center; gap:9px; padding:8px 10px;
+  border-radius: var(--dn7-radius-sm);
+  background:rgba(255,255,255,.03); cursor:pointer;
+  border:1px solid transparent;
+  transition: all .25s var(--dn7-ease);
+  position:relative;
+}
+.dn7-model:hover{ background:rgba(99,102,241,.08); border-color:rgba(99,102,241,.25); transform: translateX(2px); }
+.dn7-model.selected{
+  background: linear-gradient(135deg, rgba(99,102,241,.18), rgba(139,92,246,.12));
+  border-color: rgba(99,102,241,.5);
+  box-shadow: 0 4px 14px rgba(99,102,241,.18);
+}
+.dn7-model.selected::before{
+  content:'✓'; position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  width:18px; height:18px; border-radius:50%;
+  background:linear-gradient(135deg, var(--p,#6366f1), var(--p2,#8b5cf6));
+  color:#fff; font-size:10px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  animation: dn7-pop .3s var(--dn7-spring);
+}
+@keyframes dn7-pop{ from{ transform:translateY(-50%) scale(0); } to{ transform:translateY(-50%) scale(1); } }
+.dn7-model-ic{
+  width:28px; height:28px; border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; flex-shrink:0;
+  background: linear-gradient(135deg, rgba(99,102,241,.2), rgba(139,92,246,.15));
+  border:1px solid rgba(99,102,241,.25);
+}
+.dn7-model-info{ flex:1; min-width:0; }
+.dn7-model-name{ font-size:12px; font-weight:600; color:var(--text,#e2e8f0); }
+.dn7-model-desc{ font-size:10px; color:var(--text2,#94a3b8); margin-top:1px; }
+
+/* ═══ PIPELINE COMBINADO ═══ */
+.dn7-pipeline{
+  margin-top:8px; padding:8px; background:rgba(0,0,0,.25);
+  border-radius:8px; border:1px dashed rgba(99,102,241,.3);
+  font-size:10px; color:var(--text2,#94a3b8); text-align:center; min-height:30px;
+  display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:4px;
+}
+.dn7-pipeline-step{
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 7px; border-radius:6px;
+  background:linear-gradient(135deg, rgba(99,102,241,.25), rgba(139,92,246,.18));
+  color:#fff; font-size:10px; font-weight:600;
+  animation: dn7-slide-in .3s var(--dn7-ease-out);
+}
+@keyframes dn7-slide-in{ from{ transform:translateY(8px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+.dn7-pipeline-arrow{ color:var(--p,#6366f1); font-weight:700; }
+
+/* ═══ TOGGLES MÓDULOS ═══ */
+.dn7-toggles{ display:flex; flex-direction:column; gap:4px; }
+.dn7-toggle{
+  display:flex; align-items:center; gap:10px; padding:7px 10px;
+  border-radius: var(--dn7-radius-sm);
+  background:rgba(255,255,255,.025);
+  cursor:pointer; transition: background .2s var(--dn7-ease);
+}
+.dn7-toggle:hover{ background:rgba(255,255,255,.05); }
+.dn7-toggle-info{ flex:1; min-width:0; }
+.dn7-toggle-name{ font-size:12px; font-weight:600; color:var(--text,#e2e8f0); }
+.dn7-toggle-desc{ font-size:10px; color:var(--text2,#94a3b8); }
+.dn7-switch{
+  position:relative; width:34px; height:18px;
+  background:rgba(255,255,255,.1); border-radius:18px;
+  cursor:pointer; flex-shrink:0;
+  transition: background .25s var(--dn7-ease);
+}
+.dn7-switch::after{
+  content:''; position:absolute; top:2px; left:2px;
+  width:14px; height:14px; border-radius:50%;
+  background:#fff; transition: transform .3s var(--dn7-spring);
+  box-shadow: 0 2px 4px rgba(0,0,0,.3);
+}
+.dn7-switch.on{ background: linear-gradient(135deg, var(--p,#6366f1), var(--p2,#8b5cf6)); }
+.dn7-switch.on::after{ transform: translateX(16px); }
+
+/* ═══ CHIP DE MODELO ACTIVO (header) ═══ */
+.dn7-active-chip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 10px; border-radius:999px;
+  background: linear-gradient(135deg, rgba(99,102,241,.2), rgba(139,92,246,.15));
+  border:1px solid rgba(99,102,241,.4);
+  font-size:11px; font-weight:600; color:#fff;
+  cursor:pointer; transition: all .2s var(--dn7-ease);
+  margin-left:6px;
+}
+.dn7-active-chip:hover{ background: linear-gradient(135deg, rgba(99,102,241,.35), rgba(139,92,246,.25)); transform:translateY(-1px); }
+.dn7-active-chip .dn7-pulse-dot{
+  width:6px; height:6px; border-radius:50%; background:#4ade80;
+  box-shadow:0 0 8px #4ade80; animation: dn7-pulse-dot 1.5s ease-in-out infinite;
+}
+@keyframes dn7-pulse-dot{ 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ═══ SHORTCUT BAR (acciones rápidas) ═══ */
+.dn7-quick{
+  display:grid; grid-template-columns: repeat(4, 1fr); gap:5px;
+}
+.dn7-quick-btn{
+  padding:8px 4px; border-radius:8px; cursor:pointer;
+  background:rgba(255,255,255,.03); border:1px solid var(--dn7-stroke);
+  text-align:center; transition: all .25s var(--dn7-ease);
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+.dn7-quick-btn:hover{
+  background:linear-gradient(135deg, rgba(99,102,241,.15), rgba(139,92,246,.1));
+  border-color:rgba(99,102,241,.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99,102,241,.2);
+}
+.dn7-quick-ic{ font-size:18px; }
+.dn7-quick-lbl{ font-size:9.5px; color:var(--text2,#94a3b8); font-weight:600; }
+
+/* ═══ NOTIFICACIÓN PREMIUM ═══ */
+.dn7-notif{
+  position:fixed; top:20px; right:20px; z-index:99999;
+  padding:12px 18px; border-radius:12px;
+  background: var(--dn7-glass-strong);
+  backdrop-filter: blur(20px);
+  border:1px solid var(--dn7-stroke-bright);
+  box-shadow: 0 12px 40px rgba(0,0,0,.5);
+  color:#fff; font-size:13px; font-weight:600;
+  display:flex; align-items:center; gap:10px;
+  transform: translateX(120%); opacity:0;
+  transition: transform .4s var(--dn7-spring), opacity .3s var(--dn7-ease);
+}
+.dn7-notif.show{ transform: translateX(0); opacity:1; }
+.dn7-notif.success{ border-left:3px solid #4ade80; }
+.dn7-notif.info{ border-left:3px solid #6366f1; }
+.dn7-notif.warn{ border-left:3px solid #fbbf24; }
+
+/* ═══ COMMAND PALETTE (Ctrl+K) ═══ */
+.dn7-cmd{
+  position:fixed; inset:0; z-index:99997;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(8px);
+  display:none; align-items:flex-start; justify-content:center; padding-top:14vh;
+  animation: dn7-fade-in .25s var(--dn7-ease);
+}
+.dn7-cmd.open{ display:flex; }
+@keyframes dn7-fade-in{ from{opacity:0} to{opacity:1} }
+.dn7-cmd-box{
+  width:min(640px, 92vw); max-height:60vh; overflow:hidden;
+  background: var(--dn7-glass-strong);
+  backdrop-filter: blur(30px) saturate(180%);
+  border:1px solid var(--dn7-stroke-bright);
+  border-radius:16px;
+  box-shadow: 0 32px 96px rgba(0,0,0,.7);
+  animation: dn7-cmd-in .4s var(--dn7-spring);
+  display:flex; flex-direction:column;
+}
+@keyframes dn7-cmd-in{ from{ transform: scale(.92) translateY(-20px); opacity:0; } to{ transform: scale(1) translateY(0); opacity:1; } }
+.dn7-cmd-input{
+  width:100%; padding:18px 20px; font-size:15px;
+  background:transparent; border:none; outline:none; color:#fff;
+  border-bottom:1px solid var(--dn7-stroke);
+  font-family: var(--gpt-font, inherit);
+}
+.dn7-cmd-list{ overflow-y:auto; padding:8px; }
+.dn7-cmd-item{
+  display:flex; align-items:center; gap:12px; padding:10px 14px;
+  border-radius:10px; cursor:pointer;
+  transition: background .15s var(--dn7-ease);
+}
+.dn7-cmd-item:hover, .dn7-cmd-item.sel{
+  background: linear-gradient(135deg, rgba(99,102,241,.2), rgba(139,92,246,.12));
+}
+.dn7-cmd-ic{
+  width:34px; height:34px; border-radius:9px;
+  background: rgba(99,102,241,.15); border:1px solid rgba(99,102,241,.3);
+  display:flex; align-items:center; justify-content:center; font-size:16px;
+}
+.dn7-cmd-text{ flex:1; }
+.dn7-cmd-title{ font-size:13px; font-weight:600; color:#fff; }
+.dn7-cmd-sub{ font-size:11px; color:var(--text2,#94a3b8); }
+.dn7-cmd-kbd{
+  font-size:10px; padding:3px 7px; border-radius:5px;
+  background:rgba(255,255,255,.08); color:var(--text2,#94a3b8);
+  border:1px solid var(--dn7-stroke);
+}
+
+/* ═══ MICROANIMACIONES GENERALES ═══ */
+.dn7-anim-in{ animation: dn7-in .4s var(--dn7-ease-out) both; }
+@keyframes dn7-in{ from{ transform:translateY(8px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+
+/* ═══ MODO MÓDULOS OCULTOS (toggle UI) ═══ */
+.dn7-hide-suggest .sugs{ display:none !important; }
+.dn7-hide-modes-bar .modes-bar{ display:none !important; }
+.dn7-hide-rp .rp{ display:none !important; }
+.dn7-hide-rp .app{ grid-template-columns: 256px 1fr !important; }
+.dn7-zen .sidebar, .dn7-zen .rp, .dn7-zen .modes-bar, .dn7-zen .sugs{ display:none !important; }
+.dn7-zen .app{ grid-template-columns: 1fr !important; }
+.dn7-zen .chat-main{ max-width: 920px; margin: 0 auto; width: 100%; }
+
+/* ═══ STATUS BAR DE MODELO COMBINADO ═══ */
+.dn7-combo-bar{
+  display:none;
+  padding:8px 14px; gap:8px; align-items:center;
+  background: linear-gradient(90deg, rgba(99,102,241,.15), rgba(139,92,246,.1), rgba(6,182,212,.1));
+  border-bottom:1px solid var(--dn7-stroke);
+  font-size:11px; color:#cbd5e1; flex-wrap:wrap;
+}
+.dn7-combo-bar.show{ display:flex; }
+.dn7-combo-bar .dn7-combo-tag{
+  padding:3px 8px; border-radius:6px;
+  background: rgba(255,255,255,.08); border:1px solid var(--dn7-stroke);
+  font-weight:600; color:#fff; font-size:10px;
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width:768px){
+  .dn7-fab{ right:12px; bottom:90px; width:48px; height:48px; font-size:19px; }
+  .dn7-cp{ right:12px; left:12px; width:auto; bottom:148px; }
+  .dn7-cmd-box{ width:96vw; }
+}
+
+/* ═══ HOVER GLOW EN MENSAJES (sin romper) ═══ */
+.msg.bot .bubble, .msg.user .bubble{
+  transition: box-shadow .3s var(--dn7-ease), transform .3s var(--dn7-ease);
+}
+.msg.bot .bubble:hover{ box-shadow: 0 8px 24px rgba(99,102,241,.18); }
+
+/* ═══ EFECTO RIPPLE EN BOTONES ═══ */
+.dn7-ripple{ position:relative; overflow:hidden; }
+.dn7-ripple-wave{
+  position:absolute; border-radius:50%; transform:scale(0);
+  background:rgba(255,255,255,.4); pointer-events:none;
+  animation: dn7-ripple-anim .6s var(--dn7-ease-out);
+}
+@keyframes dn7-ripple-anim{ to{ transform: scale(4); opacity:0; } }
+</style>
+
+<!-- ═══ FAB PRINCIPAL ═══ -->
+<button class="dn7-fab" id="dn7Fab" title="Centro de control DeepNova (Ctrl+M)" aria-label="Centro de control">
+  <span id="dn7FabIco">⚙</span>
+</button>
+
+<!-- ═══ STATUS BAR COMBINADO (se inserta dinámicamente) ═══ -->
+<div class="dn7-combo-bar" id="dn7ComboBar" aria-live="polite"></div>
+
+<!-- ═══ PANEL CENTRO DE CONTROL ═══ -->
+<div class="dn7-cp" id="dn7Cp" role="dialog" aria-label="Centro de control">
+  <div class="dn7-cp-head">
+    <span style="font-size:18px">⚡</span>
+    <h4>Control Center · NeuroCore-X</h4>
+    <button class="dn7-x" onclick="DN7.toggle()" title="Cerrar">✕</button>
+  </div>
+  <div class="dn7-cp-body" id="dn7CpBody">
+
+    <!-- Acciones rápidas -->
+    <div class="dn7-sec">
+      <div class="dn7-sec-title"><span class="dn7-dot"></span> Acciones rápidas</div>
+      <div class="dn7-quick">
+        <button class="dn7-quick-btn dn7-ripple" onclick="DN7.action('newchat')">
+          <span class="dn7-quick-ic">✏️</span><span class="dn7-quick-lbl">Nuevo</span>
+        </button>
+        <button class="dn7-quick-btn dn7-ripple" onclick="DN7.action('zen')">
+          <span class="dn7-quick-ic">🧘</span><span class="dn7-quick-lbl">Zen</span>
+        </button>
+        <button class="dn7-quick-btn dn7-ripple" onclick="DN7.action('cmd')">
+          <span class="dn7-quick-ic">⌘</span><span class="dn7-quick-lbl">Comandos</span>
+        </button>
+        <button class="dn7-quick-btn dn7-ripple" onclick="DN7.action('export')">
+          <span class="dn7-quick-ic">⬇</span><span class="dn7-quick-lbl">Exportar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Selector de modo Individual / Combinado -->
+    <div class="dn7-sec">
+      <div class="dn7-sec-title"><span class="dn7-dot"></span> Modo de ejecución</div>
+      <div class="dn7-mode-tabs" role="tablist">
+        <button class="dn7-mode-tab active" id="dn7TabSolo" onclick="DN7.setMode('solo')">⚡ Individual</button>
+        <button class="dn7-mode-tab" id="dn7TabCombo" onclick="DN7.setMode('combo')">🔗 Combinado</button>
+      </div>
+      <div style="font-size:10.5px;color:var(--text2,#94a3b8);line-height:1.45" id="dn7ModeHint">
+        <strong style="color:#a5b4fc">Individual:</strong> ejecuta un único modelo aislado.
+      </div>
+    </div>
+
+    <!-- Selector de modelos -->
+    <div class="dn7-sec">
+      <div class="dn7-sec-title"><span class="dn7-dot"></span> Modelos disponibles</div>
+      <div class="dn7-models" id="dn7ModelList"></div>
+      <div class="dn7-pipeline" id="dn7Pipeline">Selecciona un modelo</div>
+    </div>
+
+    <!-- Toggles UI dinámica -->
+    <div class="dn7-sec">
+      <div class="dn7-sec-title"><span class="dn7-dot"></span> Mostrar / ocultar módulos</div>
+      <div class="dn7-toggles" id="dn7Toggles"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ COMMAND PALETTE ═══ -->
+<div class="dn7-cmd" id="dn7Cmd" role="dialog" aria-label="Paleta de comandos">
+  <div class="dn7-cmd-box">
+    <input type="text" class="dn7-cmd-input" id="dn7CmdInput" placeholder="🔍 Buscar comandos, modos, modelos..." autocomplete="off">
+    <div class="dn7-cmd-list" id="dn7CmdList"></div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════
+   🆕 DN7 · MODULAR ENGINE (NeuroCore-X Premium Layer)
+   ──────────────────────────────────────────────────────────────────────
+   Sistema modular escalable. Registry pattern. NO toca lo existente.
+   ════════════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  /* ═══ MODULES REGISTRY (escalable) ═══ */
+  const ModuleRegistry = {
+    list: new Map(),
+    register(id, def){
+      if(this.list.has(id)) return;
+      this.list.set(id, Object.assign({enabled:true, hideClass:null, label:id, desc:'', critical:false}, def));
+    },
+    setEnabled(id, on){
+      const m = this.list.get(id); if(!m) return;
+      m.enabled = !!on;
+      if(m.hideClass){
+        document.body.classList.toggle(m.hideClass, !on);
+      }
+      try{ localStorage.setItem('dn7_mod_'+id, on?'1':'0'); }catch(e){}
+      if(typeof m.onToggle === 'function') try{ m.onToggle(on); }catch(e){}
+    },
+    restore(){
+      this.list.forEach((m,id)=>{
+        try{
+          const saved = localStorage.getItem('dn7_mod_'+id);
+          if(saved !== null){ this.setEnabled(id, saved==='1'); }
+        }catch(e){}
+      });
+    },
+    all(){ return [...this.list.entries()].map(([id,m])=>Object.assign({id},m)); }
+  };
+
+  /* ═══ MODELS CATALOG ═══ */
+  const MODELS = [
+    {id:'llama-3.1-8b',     name:'LLaMA 3.1 8B',   desc:'⚡ Rápido · Chat general',     ic:'⚡', tag:'fast'},
+    {id:'llama-3.3-70b',    name:'LLaMA 3.3 70B',  desc:'🧠 Inteligente · Código',      ic:'🧠', tag:'smart'},
+    {id:'qwen3-32b',        name:'Qwen3 32B',      desc:'💡 Razonamiento profundo',      ic:'💡', tag:'reason'},
+    {id:'llama-4-scout',    name:'LLaMA 4 Scout',  desc:'👁️ Visión · Imágenes',          ic:'👁️', tag:'vision'},
+    {id:'groq-compound',    name:'Groq Compound',  desc:'🎨 Creativo · Multi-paso',     ic:'🎨', tag:'creative'}
+  ];
+
+  /* ═══ STATE ═══ */
+  const State = {
+    open: false,
+    mode: 'solo',               // 'solo' | 'combo'
+    selected: ['llama-3.1-8b'], // array de ids
+    pipeline: [],               // orden para combo
+    cmdSel: 0
+  };
+  // Restaurar estado
+  try{
+    const s = JSON.parse(localStorage.getItem('dn7_state')||'{}');
+    if(s.mode) State.mode = s.mode;
+    if(Array.isArray(s.selected) && s.selected.length) State.selected = s.selected;
+  }catch(e){}
+
+  function saveState(){
+    try{ localStorage.setItem('dn7_state', JSON.stringify({mode:State.mode, selected:State.selected})); }catch(e){}
+  }
+
+  /* ═══ HELPERS ═══ */
+  const $ = s => document.querySelector(s);
+  const el = (tag, cls, html) => { const n=document.createElement(tag); if(cls) n.className=cls; if(html!=null) n.innerHTML=html; return n; };
+
+  function notify(msg, type){
+    type = type || 'info';
+    const n = el('div', 'dn7-notif '+type, msg);
+    document.body.appendChild(n);
+    requestAnimationFrame(()=> n.classList.add('show'));
+    setTimeout(()=>{
+      n.classList.remove('show');
+      setTimeout(()=> n.remove(), 400);
+    }, 2400);
+  }
+
+  function ripple(e){
+    const t = e.currentTarget; if(!t.classList.contains('dn7-ripple')) return;
+    const r = t.getBoundingClientRect();
+    const w = el('span','dn7-ripple-wave');
+    const size = Math.max(r.width, r.height);
+    w.style.width = w.style.height = size+'px';
+    w.style.left = (e.clientX - r.left - size/2)+'px';
+    w.style.top  = (e.clientY - r.top - size/2)+'px';
+    t.appendChild(w);
+    setTimeout(()=> w.remove(), 600);
+  }
+
+  /* ═══ RENDER MODELOS ═══ */
+  function renderModels(){
+    const c = $('#dn7ModelList'); if(!c) return;
+    c.innerHTML = '';
+    MODELS.forEach(m=>{
+      const sel = State.selected.includes(m.id);
+      const row = el('div', 'dn7-model'+(sel?' selected':''));
+      row.innerHTML = `
+        <div class="dn7-model-ic">${m.ic}</div>
+        <div class="dn7-model-info">
+          <div class="dn7-model-name">${m.name}</div>
+          <div class="dn7-model-desc">${m.desc}</div>
+        </div>`;
+      row.onclick = ()=> toggleModel(m.id);
+      c.appendChild(row);
+    });
+    renderPipeline();
+    renderActiveChip();
+    syncComboBar();
+  }
+
+  function toggleModel(id){
+    if(State.mode === 'solo'){
+      State.selected = [id];
+    } else {
+      const i = State.selected.indexOf(id);
+      if(i>=0) State.selected.splice(i,1);
+      else State.selected.push(id);
+      if(!State.selected.length) State.selected = [id]; // mínimo 1
+    }
+    saveState();
+    renderModels();
+    notify(State.mode==='solo'
+      ? `🎯 Modelo activo: ${MODELS.find(x=>x.id===id).name}`
+      : `🔗 Pipeline: ${State.selected.length} modelo(s)`, 'success');
+  }
+
+  function renderPipeline(){
+    const p = $('#dn7Pipeline'); if(!p) return;
+    if(!State.selected.length){ p.textContent = 'Selecciona un modelo'; return; }
+    if(State.mode === 'solo'){
+      const m = MODELS.find(x=>x.id===State.selected[0]);
+      p.innerHTML = `<span class="dn7-pipeline-step">${m.ic} ${m.name}</span>`;
+      return;
+    }
+    const parts = [];
+    State.selected.forEach((id,i)=>{
+      const m = MODELS.find(x=>x.id===id);
+      if(!m) return;
+      if(i>0) parts.push('<span class="dn7-pipeline-arrow">→</span>');
+      parts.push(`<span class="dn7-pipeline-step">${m.ic} ${m.name.split(' ')[0]}</span>`);
+    });
+    p.innerHTML = parts.join(' ');
+  }
+
+  function renderActiveChip(){
+    let chip = $('#dn7ActiveChip');
+    const host = $('.hm') || $('.modes-bar');
+    if(!host) return;
+    if(!chip){
+      chip = el('span','dn7-active-chip');
+      chip.id = 'dn7ActiveChip';
+      chip.title = 'Click para abrir Centro de control';
+      chip.onclick = ()=> DN7.toggle(true);
+      host.appendChild(chip);
+    }
+    const count = State.selected.length;
+    const label = State.mode==='solo'
+      ? (MODELS.find(x=>x.id===State.selected[0])||{}).ic + ' Solo'
+      : `🔗 Combo (${count})`;
+    chip.innerHTML = `<span class="dn7-pulse-dot"></span>${label}`;
+  }
+
+  function syncComboBar(){
+    const bar = $('#dn7ComboBar');
+    if(!bar) return;
+    if(State.mode==='combo' && State.selected.length>1){
+      const tags = State.selected.map(id=>{
+        const m = MODELS.find(x=>x.id===id); return m?`<span class="dn7-combo-tag">${m.ic} ${m.name}</span>`:'';
+      }).join('<span style="opacity:.5">→</span>');
+      bar.innerHTML = `<strong>🔗 Pipeline activo:</strong> ${tags}`;
+      bar.classList.add('show');
+      // mover bar dentro del chat-main para no romper layout
+      const chat = document.querySelector('.chat-main .ch');
+      if(chat && bar.parentElement !== chat.parentElement){
+        chat.parentElement.insertBefore(bar, chat.nextSibling);
+      }
+    } else {
+      bar.classList.remove('show');
+    }
+  }
+
+  /* ═══ TOGGLES UI MODULES ═══ */
+  function renderToggles(){
+    const c = $('#dn7Toggles'); if(!c) return;
+    c.innerHTML = '';
+    ModuleRegistry.all().forEach(m=>{
+      if(m.hidden) return;
+      const row = el('div','dn7-toggle');
+      row.innerHTML = `
+        <div class="dn7-toggle-info">
+          <div class="dn7-toggle-name">${m.label}</div>
+          <div class="dn7-toggle-desc">${m.desc||''}</div>
+        </div>
+        <div class="dn7-switch ${m.enabled?'on':''}" data-id="${m.id}"></div>`;
+      row.querySelector('.dn7-switch').onclick = function(){
+        const on = !this.classList.contains('on');
+        this.classList.toggle('on', on);
+        ModuleRegistry.setEnabled(m.id, on);
+        notify((on?'✓ Activado: ':'✕ Oculto: ')+m.label, on?'success':'info');
+      };
+      c.appendChild(row);
+    });
+  }
+
+  /* ═══ COMMAND PALETTE ═══ */
+  const CMDS = [
+    {ic:'✏️', t:'Nueva conversación', s:'Limpiar chat actual', kbd:'Ctrl+N', run:()=>{ try{clearChat()}catch(e){} }},
+    {ic:'🧘', t:'Modo Zen', s:'Ocultar todo excepto chat', kbd:'Ctrl+Z', run:()=> document.body.classList.toggle('dn7-zen')},
+    {ic:'⚡', t:'Modo Individual', s:'Ejecutar un solo modelo', run:()=> DN7.setMode('solo')},
+    {ic:'🔗', t:'Modo Combinado', s:'Pipeline multi-modelo', run:()=> DN7.setMode('combo')},
+    {ic:'⚙', t:'Centro de control', s:'Abrir panel principal', kbd:'Ctrl+M', run:()=> DN7.toggle(true)},
+    {ic:'🎨', t:'Generar imagen', s:'Abrir generador de imágenes', run:()=>{ try{openImgGen()}catch(e){} }},
+    {ic:'📊', t:'Ver estadísticas', s:'Panel de stats', run:()=>{ try{setRPTab('info')}catch(e){} }},
+    {ic:'🧠', t:'Memoria permanente', s:'Ver / borrar memoria', run:()=>{ try{setRPTab('memory')}catch(e){} }},
+    {ic:'🛠️', t:'Herramientas', s:'Tools panel', run:()=>{ try{setRPTab('tools')}catch(e){} }},
+    {ic:'🚀', t:'DeepAgent Suite', s:'App Builder, Reportes, Workflows', run:()=>{ try{openDA('app')}catch(e){} }},
+    {ic:'⬇', t:'Exportar JSON', s:'Descargar historial JSON', run:()=>{ try{expH('json')}catch(e){} }},
+    {ic:'📝', t:'Exportar TXT', s:'Descargar historial TXT', run:()=>{ try{expH('txt')}catch(e){} }},
+    {ic:'⚡', t:'ULTRA Mode', s:'Activar NeuroCore-X Ultra', kbd:'Ctrl+Shift+U', run:()=>{ try{toggleUltra()}catch(e){} }}
+  ];
+  // Add models to palette
+  MODELS.forEach(m=> CMDS.push({ic:m.ic, t:'Usar '+m.name, s:m.desc, run:()=>{ State.mode='solo'; State.selected=[m.id]; saveState(); renderModels(); notify('🎯 Modelo activo: '+m.name,'success'); }}));
+
+  function renderCmds(filter){
+    const list = $('#dn7CmdList'); if(!list) return;
+    const q = (filter||'').toLowerCase().trim();
+    const items = CMDS.filter(c => !q || c.t.toLowerCase().includes(q) || (c.s||'').toLowerCase().includes(q));
+    list.innerHTML = '';
+    items.slice(0,12).forEach((c,i)=>{
+      const it = el('div','dn7-cmd-item'+(i===State.cmdSel?' sel':''));
+      it.innerHTML = `<div class="dn7-cmd-ic">${c.ic}</div>
+        <div class="dn7-cmd-text"><div class="dn7-cmd-title">${c.t}</div><div class="dn7-cmd-sub">${c.s||''}</div></div>
+        ${c.kbd?`<span class="dn7-cmd-kbd">${c.kbd}</span>`:''}`;
+      it.onclick = ()=>{ closeCmd(); try{c.run()}catch(e){console.warn(e)} };
+      list.appendChild(it);
+    });
+    if(!items.length){ list.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">Sin resultados</div>'; }
+  }
+
+  function openCmd(){
+    State.cmdSel = 0;
+    $('#dn7Cmd').classList.add('open');
+    const i = $('#dn7CmdInput'); i.value=''; renderCmds('');
+    setTimeout(()=> i.focus(), 50);
+  }
+  function closeCmd(){ $('#dn7Cmd').classList.remove('open'); }
+
+  /* ═══ PUBLIC API ═══ */
+  const DN7 = window.DN7 = {
+    open(){ State.open = true; $('#dn7Cp').classList.add('open'); $('#dn7FabIco').textContent='✕'; },
+    close(){ State.open = false; $('#dn7Cp').classList.remove('open'); $('#dn7FabIco').textContent='⚙'; },
+    toggle(force){
+      if(force === true) return this.open();
+      if(force === false) return this.close();
+      State.open ? this.close() : this.open();
+    },
+    setMode(mode){
+      State.mode = mode;
+      const solo = mode==='solo';
+      $('#dn7TabSolo').classList.toggle('active', solo);
+      $('#dn7TabCombo').classList.toggle('active', !solo);
+      $('#dn7ModeHint').innerHTML = solo
+        ? '<strong style="color:#a5b4fc">Individual:</strong> ejecuta un único modelo aislado.'
+        : '<strong style="color:#c4b5fd">Combinado:</strong> conecta varios modelos en pipeline secuencial.';
+      if(solo && State.selected.length>1) State.selected = [State.selected[0]];
+      saveState();
+      renderModels();
+      notify(solo?'⚡ Modo Individual activado':'🔗 Modo Combinado activado', 'success');
+    },
+    action(a){
+      switch(a){
+        case 'newchat': try{clearChat()}catch(e){} this.close(); break;
+        case 'zen': document.body.classList.toggle('dn7-zen');
+                    notify(document.body.classList.contains('dn7-zen')?'🧘 Modo Zen ON':'Modo Zen OFF','info');
+                    this.close(); break;
+        case 'cmd': this.close(); openCmd(); break;
+        case 'export': try{expH('json')}catch(e){} this.close(); break;
+      }
+    },
+    notify, openCmd, closeCmd,
+    registerModule: (id,def)=> ModuleRegistry.register(id,def),
+    getActiveModel: ()=> State.selected[0],
+    getSelectedModels: ()=> State.selected.slice(),
+    getMode: ()=> State.mode,
+    MODELS, State
+  };
+
+  /* ═══ MODULES INICIALES ═══ */
+  ModuleRegistry.register('suggest',   {label:'💡 Sugerencias', desc:'Tarjetas de prompts iniciales', hideClass:'dn7-hide-suggest'});
+  ModuleRegistry.register('modesbar',  {label:'🎚 Barra de modos', desc:'Pills de modos activos', hideClass:'dn7-hide-modes-bar'});
+  ModuleRegistry.register('rightpanel',{label:'📊 Panel derecho', desc:'Stats / Tareas / Tools / Memoria', hideClass:'dn7-hide-rp'});
+  ModuleRegistry.register('orbs',      {label:'🌌 Fondo animado', desc:'Orbes flotantes de fondo', onToggle:on=>{
+    document.querySelectorAll('.bg-fx').forEach(b=> b.style.display = on?'':'none');
+  }});
+  ModuleRegistry.register('autoscroll',{label:'⏬ Auto-scroll', desc:'Bajar al recibir mensaje', onToggle:on=>{ window._dn7AutoScroll = on; }});
+  window._dn7AutoScroll = true;
+
+  /* ═══ INIT ═══ */
+  function init(){
+    // FAB binding
+    const fab = $('#dn7Fab');
+    if(fab){
+      fab.addEventListener('click', e=>{ ripple(e); DN7.toggle(); });
+    }
+    // Restaurar módulos
+    ModuleRegistry.restore();
+    renderModels();
+    renderToggles();
+
+    // Cmd palette input
+    const ci = $('#dn7CmdInput');
+    if(ci){
+      ci.addEventListener('input', e=>{ State.cmdSel=0; renderCmds(e.target.value); });
+      ci.addEventListener('keydown', e=>{
+        const items = $('#dn7CmdList').querySelectorAll('.dn7-cmd-item');
+        if(e.key==='ArrowDown'){ e.preventDefault(); State.cmdSel = Math.min(State.cmdSel+1, items.length-1); renderCmds(ci.value); }
+        else if(e.key==='ArrowUp'){ e.preventDefault(); State.cmdSel = Math.max(State.cmdSel-1, 0); renderCmds(ci.value); }
+        else if(e.key==='Enter'){ e.preventDefault(); items[State.cmdSel] && items[State.cmdSel].click(); }
+        else if(e.key==='Escape'){ closeCmd(); }
+      });
+    }
+    // Cierre del palette al hacer click en el fondo
+    const cmdBg = $('#dn7Cmd');
+    if(cmdBg) cmdBg.addEventListener('click', e=>{ if(e.target===cmdBg) closeCmd(); });
+
+    // Atajos globales
+    document.addEventListener('keydown', e=>{
+      const k = e.key.toLowerCase();
+      const meta = e.ctrlKey || e.metaKey;
+      if(meta && k==='k'){ e.preventDefault(); openCmd(); }
+      else if(meta && k==='m'){ e.preventDefault(); DN7.toggle(); }
+      else if(meta && !e.shiftKey && k==='z' && !document.activeElement.matches('input,textarea')){
+        e.preventDefault(); DN7.action('zen');
+      }
+    });
+
+    // Ripple en botones premium
+    document.querySelectorAll('.dn7-ripple').forEach(b=> b.addEventListener('click', ripple));
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', e=>{
+      if(!State.open) return;
+      const cp = $('#dn7Cp'), fab = $('#dn7Fab');
+      if(cp && !cp.contains(e.target) && fab && !fab.contains(e.target)) DN7.close();
+    });
+
+    // Mensaje de bienvenida (sutil)
+    setTimeout(()=> notify('⚡ NeuroCore-X Premium listo · Ctrl+K comandos · Ctrl+M control', 'info'), 1500);
+
+    console.log('%c⚡ DN7 Premium Layer activo','color:#8b5cf6;font-weight:700;font-size:13px');
+    console.log('%c→ DN7.MODELS / DN7.getActiveModel() / DN7.openCmd() / Ctrl+K / Ctrl+M / Ctrl+Z','color:#94a3b8');
+  }
+
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(init, 50);
+  } else {
+    document.addEventListener('DOMContentLoaded', init);
+  }
+})();
+</script>
+<!-- ════════════════════════════════════════════════════════════════════════
+     END · DEEPNOVA PREMIUM UPGRADE LAYER v7
+     ════════════════════════════════════════════════════════════════════════ -->
+
+
 </body>
 </html>
