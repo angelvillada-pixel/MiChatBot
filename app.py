@@ -150,6 +150,20 @@ if _db is not None:
         print(f"[deepnova-v2] db init error: {_e}")
 
 # ── CLIENTE ───────────────────────────────
+
+
+def _has_groq_key() -> bool:
+    return bool((os.environ.get("GROQ_API_KEY") or "").strip())
+
+def _groq_missing_response() -> dict:
+    return {
+        "response": "⚠️ Falta configurar GROQ_API_KEY en el servidor. Configúralo y reinicia para reactivar chat, multi-IA y ultra.",
+        "model_used": "none",
+        "modes_used": ["config"],
+        "web_search": False,
+        "language": "español",
+        "memory_active": False,
+    }
 _client = None
 def get_groq():
     global _client
@@ -942,8 +956,66 @@ def detect_modes(msg):
 
     return modes
 
+
+
+OPUS_CODE_MODE = """MODO OPUS-CODE ACTIVADO:
+Pipeline obligatorio en toda tarea de programación:
+1) SPEC: define objetivo, entradas/salidas y edge cases.
+2) PLAN: arquitectura + decisiones técnicas + trade-offs.
+3) BUILD: implementación completa y ejecutable.
+4) VERIFY: tests (unitarios/funcionales), revisión crítica y versión final mejorada.
+Entrega final con secciones: Resumen técnico, Código, Tests, Runbook, Mejoras.
+"""
+
+def _call_model(model_name, messages, temperature=0.6, max_tokens=900):
+    r = get_groq().chat.completions.create(
+        model=model_name,
+        messages=messages,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    return r.choices[0].message.content
+
+def all_models_fusion(msg, system_prompt):
+    model_plan = [
+        ("smart", "Arquitectura y solución principal", 0.6),
+        ("reason", "Razonamiento profundo y riesgos", 0.4),
+        ("creative", "Mejoras de creatividad técnica/UX", 0.7),
+        ("fast", "Síntesis final precisa", 0.3),
+    ]
+    outputs = []
+    for key, objective, temp in model_plan:
+        model_name = MODELS.get(key)
+        if not model_name:
+            continue
+        try:
+            out = _call_model(
+                model_name,
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Objetivo del submodelo: {objective}\n\nTarea: {msg}"},
+                ],
+                temperature=temp,
+                max_tokens=900 if key != "fast" else 700,
+            )
+            outputs.append((key, model_name, out))
+        except Exception as e:
+            outputs.append((key, model_name, f"[error:{e}]"))
+
+    merged_ctx = "\n\n".join([f"### {k} ({m})\n{o}" for k,m,o in outputs])
+    final_model = MODELS.get("smart", MODELS.get("fast"))
+    final = _call_model(
+        final_model,
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": "Fusiona estas salidas en una respuesta única, concreta y superior.\n\n" + merged_ctx[:12000]},
+        ],
+        temperature=0.5,
+        max_tokens=1200,
+    )
+    return final, outputs
 def build_unified_system(modes, web_ctx="", mem_ctx="", lang="español", knowledge_ctx=""):
-    system = SYSTEM_BASE_EXTENDED + mem_ctx + knowledge_ctx
+    system = SYSTEM_BASE_EXTENDED + "\n\n" + OPUS_CODE_MODE + mem_ctx + knowledge_ctx
     mode_instructions = []
 
     if "code" in modes:
@@ -1302,6 +1374,8 @@ def chat():
     sid   = data.get("session_id", "x")
     multi = data.get("multi_model", False)
     ultra = bool(data.get("ultra", False))  # 🆕 ULTRA mode flag
+    all_models = bool(data.get("all_models", False))
+    force_model_key = str(data.get("force_model", "")).strip().lower()
 
     if not msg:
         return jsonify({"response": "Escribe algo 😊"}), 400
@@ -1309,6 +1383,9 @@ def chat():
     safe, reason = is_safe(msg)
     if not safe:
         return jsonify({"response": f"⚠️ {reason}"}), 400
+
+    if not _has_groq_key():
+        return jsonify(_groq_missing_response()), 503
 
     # ═══ 🆕 NEUROCORE-X ULTRA MODE (aditivo, short-circuit) ═══
     if ultra and _NX_OK and _nx is not None:
@@ -1334,7 +1411,7 @@ def chat():
             return jsonify({
                 "response":   result["answer"],
                 "model_used": result["engine"],
-                "modes_used": ["ultra", "reason", "plan", "critique"],
+                "modes_used": ["ultra", "reason", "plan", "critique", "all-models", "opus-code"],
                 "elapsed_ms": result["elapsed_ms"],
                 "ultra":      True,
             })
@@ -1478,7 +1555,9 @@ def chat():
         pass
 
     # Seleccionar modelo
-    if len(modes) > 2 or "reason" in modes or "agent" in modes:
+    if force_model_key in MODELS:
+        model = MODELS[force_model_key]
+    elif len(modes) > 2 or "reason" in modes or "agent" in modes:
         model = MODELS["smart"]
     elif "code" in modes or "design" in modes:
         model = MODELS["smart"]
@@ -1507,15 +1586,19 @@ def chat():
             truncate_msg(m) for m in convs[sid][-max_hist:]
         ]
 
-        r = get_groq().chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system[:2000]}
-            ] + historial_seguro,
-            temperature=0.8,
-            max_tokens=1000
-        )
-        response = r.choices[0].message.content
+        if ultra or all_models:
+            response, fusion_trace = all_models_fusion(msg, system[:2400])
+            model = "Fusion(" + ",".join([t[0] for t in fusion_trace]) + ")"
+        else:
+            r = get_groq().chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system[:2000]}
+                ] + historial_seguro,
+                temperature=0.8,
+                max_tokens=1000
+            )
+            response = r.choices[0].message.content
 
         # Multi-IA verificación
         if multi and len(msg) > 20:
@@ -1559,7 +1642,10 @@ def chat():
             "modes_used":    modes,
             "web_search":    web_used,
             "language":      lang,
-            "memory_active": bool(get_memory(sid))
+            "memory_active": bool(get_memory(sid)),
+            "ultra": ultra,
+            "all_models": (ultra or all_models),
+            "forced_model": force_model_key if force_model_key in MODELS else ""
         })
 
     except Exception as e:
