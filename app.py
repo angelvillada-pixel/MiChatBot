@@ -10,6 +10,19 @@ import tempfile
 import uuid
 import logging
 import threading
+import sys
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # ══════════════════════════════════════════
 # 🆕 DEEPNOVA v3 PREMIUM — Logging estructurado
@@ -157,6 +170,7 @@ def _has_groq_key() -> bool:
 
 def _groq_missing_response() -> dict:
     return {
+        "error": "missing_groq_api_key",
         "response": "⚠️ Falta configurar GROQ_API_KEY en el servidor. Configúralo y reinicia para reactivar chat, multi-IA y ultra.",
         "model_used": "none",
         "modes_used": ["config"],

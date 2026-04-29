@@ -4382,8 +4382,15 @@ async function send(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({message:txt, session_id:sid, multi_model:multi, ultra:ultraMode, all_models:allModelsFusion, force_model:forcedModel})
     });
-    const d=await r.json();
+    let d={};
+    try{ d=await r.json(); }catch(_){ d={response:'Respuesta inválida del servidor'}; }
     setTyping(false);
+
+    if(!r.ok){
+      const errMsg = d.response || d.error || `Error del servidor (${r.status})`;
+      addMsg(errMsg,'bot',d.model_used||'',d.modes_used||[]);
+      return;
+    }
 
     if(d.modes_used && d.modes_used.length){
       showModes(d.modes_used);
@@ -4417,7 +4424,7 @@ async function send(){
 
   }catch(e){
     setTyping(false);
-    addMsg('⚠️ Error de conexión.','bot');
+    addMsg('⚠️ Error de conexión. Verifica que Flask esté corriendo en http://localhost:5000.','bot');
   }
   document.getElementById('sbtn').disabled=false;
   inp.focus();
@@ -5465,34 +5472,7 @@ function prevTab(tab){
     const iframe = document.getElementById('previewIframe');
     let content = _previewCode;
     if(_previewLang === 'css'){
-      content = '<style>' + _previewCode + '
-/* === Adaptive Workspace Premium === */
-body.focus-chat .sidebar, body.focus-chat .rp{display:none !important}
-body.focus-chat .app{grid-template-columns:1fr !important}
-body.hide-right .rp{display:none !important}
-body.hide-right .app{grid-template-columns:var(--sidebar-w) 1fr !important}
-body.hide-left .sidebar{display:none !important}
-body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
-
-.view-toggles{display:flex;gap:6px;align-items:center}
-.vbtn{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;cursor:pointer;transition:all .25s var(--ease-spring)}
-.vbtn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 25px rgba(124,109,250,.25)}
-.vbtn.on{background:linear-gradient(135deg,rgba(124,109,250,.28),rgba(59,130,246,.22));border-color:rgba(124,109,250,.55)}
-
-/* premium unique effects */
-.chat-main::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(120deg,transparent 0 20px,rgba(124,109,250,.03) 20px 24px);mix-blend-mode:screen;opacity:.45;animation:prismShift 14s linear infinite}
-@keyframes prismShift{from{transform:translateX(-40px)}to{transform:translateX(40px)}}
-.bubble{position:relative;overflow:hidden}
-.bubble::after{content:'';position:absolute;inset:-120% auto auto -40%;width:40%;height:300%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:rotate(18deg);animation:bubbleSweep 8s ease-in-out infinite}
-@keyframes bubbleSweep{0%,100%{left:-50%}50%{left:130%}}
-
-@media (max-width: 1100px){
-  .app{grid-template-columns:1fr !important}
-  .rp{position:fixed;right:-320px;top:0;bottom:0;width:300px;z-index:960;transition:right .32s var(--ease)}
-  body.show-right .rp{right:0}
-}
-
-</style>' +
+      content = '<style>' + _previewCode + '</style>' +
         '<body style="margin:16px;font-family:system-ui;color:#222">(Preview CSS aplicado)</body>';
     } else if(['js','javascript'].indexOf(_previewLang) !== -1){
       content = '<body style="margin:16px;font-family:system-ui"></body>' +
