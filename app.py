@@ -150,6 +150,20 @@ if _db is not None:
         print(f"[deepnova-v2] db init error: {_e}")
 
 # ── CLIENTE ───────────────────────────────
+
+
+def _has_groq_key() -> bool:
+    return bool((os.environ.get("GROQ_API_KEY") or "").strip())
+
+def _groq_missing_response() -> dict:
+    return {
+        "response": "⚠️ Falta configurar GROQ_API_KEY en el servidor. Configúralo y reinicia para reactivar chat, multi-IA y ultra.",
+        "model_used": "none",
+        "modes_used": ["config"],
+        "web_search": False,
+        "language": "español",
+        "memory_active": False,
+    }
 _client = None
 def get_groq():
     global _client
@@ -1369,6 +1383,9 @@ def chat():
     safe, reason = is_safe(msg)
     if not safe:
         return jsonify({"response": f"⚠️ {reason}"}), 400
+
+    if not _has_groq_key():
+        return jsonify(_groq_missing_response()), 503
 
     # ═══ 🆕 NEUROCORE-X ULTRA MODE (aditivo, short-circuit) ═══
     if ultra and _NX_OK and _nx is not None:
