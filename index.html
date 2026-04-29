@@ -806,6 +806,31 @@ body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
 }
 .dn-conv-btn:hover{ background:rgba(99,102,241,.2); border-color:var(--p) }
 
+/* === Adaptive Workspace Premium === */
+body.focus-chat .sidebar, body.focus-chat .rp{display:none !important}
+body.focus-chat .app{grid-template-columns:1fr !important}
+body.hide-right .rp{display:none !important}
+body.hide-right .app{grid-template-columns:var(--sidebar-w) 1fr !important}
+body.hide-left .sidebar{display:none !important}
+body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
+
+.view-toggles{display:flex;gap:6px;align-items:center}
+.vbtn{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;cursor:pointer;transition:all .25s var(--ease-spring)}
+.vbtn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 25px rgba(124,109,250,.25)}
+.vbtn.on{background:linear-gradient(135deg,rgba(124,109,250,.28),rgba(59,130,246,.22));border-color:rgba(124,109,250,.55)}
+
+/* premium unique effects */
+.chat-main::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(120deg,transparent 0 20px,rgba(124,109,250,.03) 20px 24px);mix-blend-mode:screen;opacity:.45;animation:prismShift 14s linear infinite}
+@keyframes prismShift{from{transform:translateX(-40px)}to{transform:translateX(40px)}}
+.bubble{position:relative;overflow:hidden}
+.bubble::after{content:'';position:absolute;inset:-120% auto auto -40%;width:40%;height:300%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:rotate(18deg);animation:bubbleSweep 8s ease-in-out infinite}
+@keyframes bubbleSweep{0%,100%{left:-50%}50%{left:130%}}
+
+@media (max-width: 1100px){
+  .app{grid-template-columns:1fr !important}
+  .rp{position:fixed;right:-320px;top:0;bottom:0;width:300px;z-index:960;transition:right .32s var(--ease)}
+  body.show-right .rp{right:0}
+}
 
 </style>
 
@@ -1504,6 +1529,31 @@ body{ font-family:var(--gpt-font); font-size:15px; line-height:1.65; }
 /* @keyframes orbMove, mIn, tdd, logoGlow, havGlow, dlp, floatA permanecen intactas arriba */
 
 
+/* === Adaptive Workspace Premium === */
+body.focus-chat .sidebar, body.focus-chat .rp{display:none !important}
+body.focus-chat .app{grid-template-columns:1fr !important}
+body.hide-right .rp{display:none !important}
+body.hide-right .app{grid-template-columns:var(--sidebar-w) 1fr !important}
+body.hide-left .sidebar{display:none !important}
+body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
+
+.view-toggles{display:flex;gap:6px;align-items:center}
+.vbtn{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;cursor:pointer;transition:all .25s var(--ease-spring)}
+.vbtn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 25px rgba(124,109,250,.25)}
+.vbtn.on{background:linear-gradient(135deg,rgba(124,109,250,.28),rgba(59,130,246,.22));border-color:rgba(124,109,250,.55)}
+
+/* premium unique effects */
+.chat-main::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(120deg,transparent 0 20px,rgba(124,109,250,.03) 20px 24px);mix-blend-mode:screen;opacity:.45;animation:prismShift 14s linear infinite}
+@keyframes prismShift{from{transform:translateX(-40px)}to{transform:translateX(40px)}}
+.bubble{position:relative;overflow:hidden}
+.bubble::after{content:'';position:absolute;inset:-120% auto auto -40%;width:40%;height:300%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:rotate(18deg);animation:bubbleSweep 8s ease-in-out infinite}
+@keyframes bubbleSweep{0%,100%{left:-50%}50%{left:130%}}
+
+@media (max-width: 1100px){
+  .app{grid-template-columns:1fr !important}
+  .rp{position:fixed;right:-320px;top:0;bottom:0;width:300px;z-index:960;transition:right .32s var(--ease)}
+  body.show-right .rp{right:0}
+}
 
 </style>
 
@@ -2493,6 +2543,31 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
   .dn3-shortcuts-list { grid-template-columns: 1fr; }
 }
 
+/* === Adaptive Workspace Premium === */
+body.focus-chat .sidebar, body.focus-chat .rp{display:none !important}
+body.focus-chat .app{grid-template-columns:1fr !important}
+body.hide-right .rp{display:none !important}
+body.hide-right .app{grid-template-columns:var(--sidebar-w) 1fr !important}
+body.hide-left .sidebar{display:none !important}
+body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
+
+.view-toggles{display:flex;gap:6px;align-items:center}
+.vbtn{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;cursor:pointer;transition:all .25s var(--ease-spring)}
+.vbtn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 25px rgba(124,109,250,.25)}
+.vbtn.on{background:linear-gradient(135deg,rgba(124,109,250,.28),rgba(59,130,246,.22));border-color:rgba(124,109,250,.55)}
+
+/* premium unique effects */
+.chat-main::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(120deg,transparent 0 20px,rgba(124,109,250,.03) 20px 24px);mix-blend-mode:screen;opacity:.45;animation:prismShift 14s linear infinite}
+@keyframes prismShift{from{transform:translateX(-40px)}to{transform:translateX(40px)}}
+.bubble{position:relative;overflow:hidden}
+.bubble::after{content:'';position:absolute;inset:-120% auto auto -40%;width:40%;height:300%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:rotate(18deg);animation:bubbleSweep 8s ease-in-out infinite}
+@keyframes bubbleSweep{0%,100%{left:-50%}50%{left:130%}}
+
+@media (max-width: 1100px){
+  .app{grid-template-columns:1fr !important}
+  .rp{position:fixed;right:-320px;top:0;bottom:0;width:300px;z-index:960;transition:right .32s var(--ease)}
+  body.show-right .rp{right:0}
+}
 
 </style>
 
@@ -3198,6 +3273,31 @@ html,body{height:100%;background:var(--nova-bg);color:var(--text);font-family:va
 #logoUp,#imgUp{display:none!important;position:absolute;left:-9999px}
 
 
+/* === Adaptive Workspace Premium === */
+body.focus-chat .sidebar, body.focus-chat .rp{display:none !important}
+body.focus-chat .app{grid-template-columns:1fr !important}
+body.hide-right .rp{display:none !important}
+body.hide-right .app{grid-template-columns:var(--sidebar-w) 1fr !important}
+body.hide-left .sidebar{display:none !important}
+body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
+
+.view-toggles{display:flex;gap:6px;align-items:center}
+.vbtn{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;cursor:pointer;transition:all .25s var(--ease-spring)}
+.vbtn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 25px rgba(124,109,250,.25)}
+.vbtn.on{background:linear-gradient(135deg,rgba(124,109,250,.28),rgba(59,130,246,.22));border-color:rgba(124,109,250,.55)}
+
+/* premium unique effects */
+.chat-main::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(120deg,transparent 0 20px,rgba(124,109,250,.03) 20px 24px);mix-blend-mode:screen;opacity:.45;animation:prismShift 14s linear infinite}
+@keyframes prismShift{from{transform:translateX(-40px)}to{transform:translateX(40px)}}
+.bubble{position:relative;overflow:hidden}
+.bubble::after{content:'';position:absolute;inset:-120% auto auto -40%;width:40%;height:300%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:rotate(18deg);animation:bubbleSweep 8s ease-in-out infinite}
+@keyframes bubbleSweep{0%,100%{left:-50%}50%{left:130%}}
+
+@media (max-width: 1100px){
+  .app{grid-template-columns:1fr !important}
+  .rp{position:fixed;right:-320px;top:0;bottom:0;width:300px;z-index:960;transition:right .32s var(--ease)}
+  body.show-right .rp{right:0}
+}
 
 </style>
 
@@ -3306,6 +3406,31 @@ html,body{height:100%;background:var(--nova-bg);color:var(--text);font-family:va
 /* Ocultar el emoji robot si lo hubiera */
 .logo-box .logo-emoji{ display:none !important; }
 
+/* === Adaptive Workspace Premium === */
+body.focus-chat .sidebar, body.focus-chat .rp{display:none !important}
+body.focus-chat .app{grid-template-columns:1fr !important}
+body.hide-right .rp{display:none !important}
+body.hide-right .app{grid-template-columns:var(--sidebar-w) 1fr !important}
+body.hide-left .sidebar{display:none !important}
+body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
+
+.view-toggles{display:flex;gap:6px;align-items:center}
+.vbtn{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;cursor:pointer;transition:all .25s var(--ease-spring)}
+.vbtn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 25px rgba(124,109,250,.25)}
+.vbtn.on{background:linear-gradient(135deg,rgba(124,109,250,.28),rgba(59,130,246,.22));border-color:rgba(124,109,250,.55)}
+
+/* premium unique effects */
+.chat-main::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(120deg,transparent 0 20px,rgba(124,109,250,.03) 20px 24px);mix-blend-mode:screen;opacity:.45;animation:prismShift 14s linear infinite}
+@keyframes prismShift{from{transform:translateX(-40px)}to{transform:translateX(40px)}}
+.bubble{position:relative;overflow:hidden}
+.bubble::after{content:'';position:absolute;inset:-120% auto auto -40%;width:40%;height:300%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:rotate(18deg);animation:bubbleSweep 8s ease-in-out infinite}
+@keyframes bubbleSweep{0%,100%{left:-50%}50%{left:130%}}
+
+@media (max-width: 1100px){
+  .app{grid-template-columns:1fr !important}
+  .rp{position:fixed;right:-320px;top:0;bottom:0;width:300px;z-index:960;transition:right .32s var(--ease)}
+  body.show-right .rp{right:0}
+}
 
 </style>
 
@@ -5340,7 +5465,34 @@ function prevTab(tab){
     const iframe = document.getElementById('previewIframe');
     let content = _previewCode;
     if(_previewLang === 'css'){
-      content = '<style>' + _previewCode + '</style>' +
+      content = '<style>' + _previewCode + '
+/* === Adaptive Workspace Premium === */
+body.focus-chat .sidebar, body.focus-chat .rp{display:none !important}
+body.focus-chat .app{grid-template-columns:1fr !important}
+body.hide-right .rp{display:none !important}
+body.hide-right .app{grid-template-columns:var(--sidebar-w) 1fr !important}
+body.hide-left .sidebar{display:none !important}
+body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
+
+.view-toggles{display:flex;gap:6px;align-items:center}
+.vbtn{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;cursor:pointer;transition:all .25s var(--ease-spring)}
+.vbtn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 25px rgba(124,109,250,.25)}
+.vbtn.on{background:linear-gradient(135deg,rgba(124,109,250,.28),rgba(59,130,246,.22));border-color:rgba(124,109,250,.55)}
+
+/* premium unique effects */
+.chat-main::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(120deg,transparent 0 20px,rgba(124,109,250,.03) 20px 24px);mix-blend-mode:screen;opacity:.45;animation:prismShift 14s linear infinite}
+@keyframes prismShift{from{transform:translateX(-40px)}to{transform:translateX(40px)}}
+.bubble{position:relative;overflow:hidden}
+.bubble::after{content:'';position:absolute;inset:-120% auto auto -40%;width:40%;height:300%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:rotate(18deg);animation:bubbleSweep 8s ease-in-out infinite}
+@keyframes bubbleSweep{0%,100%{left:-50%}50%{left:130%}}
+
+@media (max-width: 1100px){
+  .app{grid-template-columns:1fr !important}
+  .rp{position:fixed;right:-320px;top:0;bottom:0;width:300px;z-index:960;transition:right .32s var(--ease)}
+  body.show-right .rp{right:0}
+}
+
+</style>' +
         '<body style="margin:16px;font-family:system-ui;color:#222">(Preview CSS aplicado)</body>';
     } else if(['js','javascript'].indexOf(_previewLang) !== -1){
       content = '<body style="margin:16px;font-family:system-ui"></body>' +
@@ -6268,6 +6420,31 @@ document.addEventListener('keydown', e => {
   font-size:10px;font-weight:700;letter-spacing:.8px;vertical-align:middle;
 }
 
+/* === Adaptive Workspace Premium === */
+body.focus-chat .sidebar, body.focus-chat .rp{display:none !important}
+body.focus-chat .app{grid-template-columns:1fr !important}
+body.hide-right .rp{display:none !important}
+body.hide-right .app{grid-template-columns:var(--sidebar-w) 1fr !important}
+body.hide-left .sidebar{display:none !important}
+body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
+
+.view-toggles{display:flex;gap:6px;align-items:center}
+.vbtn{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;cursor:pointer;transition:all .25s var(--ease-spring)}
+.vbtn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 25px rgba(124,109,250,.25)}
+.vbtn.on{background:linear-gradient(135deg,rgba(124,109,250,.28),rgba(59,130,246,.22));border-color:rgba(124,109,250,.55)}
+
+/* premium unique effects */
+.chat-main::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(120deg,transparent 0 20px,rgba(124,109,250,.03) 20px 24px);mix-blend-mode:screen;opacity:.45;animation:prismShift 14s linear infinite}
+@keyframes prismShift{from{transform:translateX(-40px)}to{transform:translateX(40px)}}
+.bubble{position:relative;overflow:hidden}
+.bubble::after{content:'';position:absolute;inset:-120% auto auto -40%;width:40%;height:300%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:rotate(18deg);animation:bubbleSweep 8s ease-in-out infinite}
+@keyframes bubbleSweep{0%,100%{left:-50%}50%{left:130%}}
+
+@media (max-width: 1100px){
+  .app{grid-template-columns:1fr !important}
+  .rp{position:fixed;right:-320px;top:0;bottom:0;width:300px;z-index:960;transition:right .32s var(--ease)}
+  body.show-right .rp{right:0}
+}
 
 </style>
 
@@ -6944,6 +7121,31 @@ console.log('%c⚡ NeuroCore-X UI ready · ULTRA = Ctrl+Shift+U','color:#8b5cf6;
 }
 @keyframes dn7-ripple-anim{ to{ transform: scale(4); opacity:0; } }
 
+/* === Adaptive Workspace Premium === */
+body.focus-chat .sidebar, body.focus-chat .rp{display:none !important}
+body.focus-chat .app{grid-template-columns:1fr !important}
+body.hide-right .rp{display:none !important}
+body.hide-right .app{grid-template-columns:var(--sidebar-w) 1fr !important}
+body.hide-left .sidebar{display:none !important}
+body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
+
+.view-toggles{display:flex;gap:6px;align-items:center}
+.vbtn{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;cursor:pointer;transition:all .25s var(--ease-spring)}
+.vbtn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 25px rgba(124,109,250,.25)}
+.vbtn.on{background:linear-gradient(135deg,rgba(124,109,250,.28),rgba(59,130,246,.22));border-color:rgba(124,109,250,.55)}
+
+/* premium unique effects */
+.chat-main::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(120deg,transparent 0 20px,rgba(124,109,250,.03) 20px 24px);mix-blend-mode:screen;opacity:.45;animation:prismShift 14s linear infinite}
+@keyframes prismShift{from{transform:translateX(-40px)}to{transform:translateX(40px)}}
+.bubble{position:relative;overflow:hidden}
+.bubble::after{content:'';position:absolute;inset:-120% auto auto -40%;width:40%;height:300%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);transform:rotate(18deg);animation:bubbleSweep 8s ease-in-out infinite}
+@keyframes bubbleSweep{0%,100%{left:-50%}50%{left:130%}}
+
+@media (max-width: 1100px){
+  .app{grid-template-columns:1fr !important}
+  .rp{position:fixed;right:-320px;top:0;bottom:0;width:300px;z-index:960;transition:right .32s var(--ease)}
+  body.show-right .rp{right:0}
+}
 
 </style>
 
