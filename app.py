@@ -94,9 +94,7 @@ except Exception as _e:
     OAUTH_CONFIGS = {}
     _OAUTH_OK = False
 
-DEEPNOVA_VERSION = "5.0-opus-deepnova"  # override a v5 Opus DeepNova
-DEEPNOVA_VERSION = "6.0-neurocore-x"     # 🆕 v6 NeuroCore-X PRO
-DEEPNOVA_VERSION = "7.0-mejoras-ia"      # 🆕 v7 mejoras de IA (override final)
+DEEPNOVA_VERSION = "7.0-mejoras-ia"      # versión final activa
 
 # ══════════════════════════════════════════
 # 🆕 DEEPNOVA v7 — Módulos de mejoras IA (carga perezosa, opcional)
@@ -190,7 +188,7 @@ MODELS = {
     "fast":    "llama-3.1-8b-instant",
     "smart":   "llama-3.3-70b-versatile",
     "reason":  "qwen/qwen3-32b",
-    "creative":"groq/compound",
+    "creative":"llama-3.3-70b-versatile",
     "vision":  "meta-llama/llama-4-scout-17b-16e-instruct",
 }
 
@@ -626,8 +624,7 @@ def execute_python(code, timeout=10):
                 "True":       True,
                 "False":      False,
                 "None":       None,
-                # Permitir import de módulos seguros
-                "__import__": __import__,
+                # __import__ removido por seguridad; módulos seguros ya pre-importados abajo
             },
             # Módulos pre-importados disponibles
             "math":        math,
@@ -1105,7 +1102,7 @@ def autonomous_agent(task, sid):
         exec_r = get_groq().chat.completions.create(
             model=MODELS["smart"],
             messages=[
-                {"role": "system", "content": SYSTEM_BASE},
+                {"role": "system", "content": SYSTEM_BASE_EXTENDED},
                 {"role": "user", "content":
                  f"Ejecuta este plan para: {task}\n\n"
                  f"Plan:\n{plan}\n\n"
@@ -1601,16 +1598,16 @@ def chat():
         ]
 
         if ultra or all_models:
-            response, fusion_trace = all_models_fusion(msg, system[:2400])
+            response, fusion_trace = all_models_fusion(msg, system[:6000])
             model = "Fusion(" + ",".join([t[0] for t in fusion_trace]) + ")"
         else:
             r = get_groq().chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": system[:2000]}
+                    {"role": "system", "content": system[:6000]}
                 ] + historial_seguro,
                 temperature=0.8,
-                max_tokens=1000
+                max_tokens=2000
             )
             response = r.choices[0].message.content
 
@@ -1902,9 +1899,7 @@ def generate_structured_report(topic, sid, depth="standard"):
     try:
         search_results = web_search(topic)
         if search_results:
-            web_ctx = "\n\nDATOS WEB RECIENTES:\n" + "\n".join(
-                f"- {r.get('title','')}: {r.get('snippet','')}" for r in search_results[:5]
-            )
+            web_ctx = "\n\nDATOS WEB RECIENTES:\n" + search_results
     except Exception:
         pass
 
@@ -2034,7 +2029,7 @@ def run_workflow_step(step, context):
     try:
         if stype == "search":
             results = web_search(inp)
-            return "\n".join(f"- {r.get('title','')}: {r.get('snippet','')}" for r in (results or [])[:5])
+            return results or "(sin resultados)"
         if stype == "execute":
             ex = execute_python(inp)
             return ex.get("output") or ex.get("error", "")
