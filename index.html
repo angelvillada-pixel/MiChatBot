@@ -1465,24 +1465,31 @@ body{ font-family:var(--gpt-font); font-size:15px; line-height:1.65; }
 .ifooter .ihint{ font-size:11px; color:var(--gpt-text2); }
 .ifooter .ihint::before{ content:'DeepNova puede cometer errores. Verifica la información importante. · '; }
 
-/* SUGERENCIAS / EMPTY STATE estilo ChatGPT */
+/* SUGERENCIAS / EMPTY STATE estilo ChatGPT pero NO intrusivo */
 .sugs{
-  display:grid !important;
-  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)) !important;
-  gap:10px !important;
-  padding:18px max(20px, 12%) !important;
-  max-width:980px; margin:0 auto;
+  display: flex !important;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 10px !important;
+  padding: 10px max(20px, 12%) !important;
+  margin: 0 auto;
+  width: 100%;
+  scrollbar-width: none; /* Ocultar scrollbar */
 }
+.sugs::-webkit-scrollbar { display: none; }
 .sg{
   background:var(--gpt-surface) !important;
   border:1px solid var(--gpt-border) !important;
   border-radius:12px !important;
-  padding:14px 16px !important;
-  font-size:13.5px !important;
+  padding:10px 16px !important;
+  font-size:12.5px !important;
   color:var(--gpt-text) !important;
   cursor:pointer; transition:all .15s;
-  min-height:56px;
+  min-height:46px;
   display:flex; align-items:center;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  justify-content: center;
 }
 .sg:hover{
   background:var(--gpt-surface2) !important;
