@@ -94,7 +94,7 @@ except Exception as _e:
     OAUTH_CONFIGS = {}
     _OAUTH_OK = False
 
-DEEPNOVA_VERSION = "7.0-mejoras-ia"      # versión final activa
+DEEPNOVA_VERSION = "8.0-elite-coding"    # versión final activa
 
 # ══════════════════════════════════════════
 # 🆕 DEEPNOVA v7 — Módulos de mejoras IA (carga perezosa, opcional)
@@ -110,6 +110,27 @@ except Exception as _e_v7l:
     print(f"[v7] aprendizaje no disponible: {_e_v7l}")
     _v7_le = _v7_fl = None
     _V7_LEARNING_OK = False
+
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v8 — Elite Coding Engine + Multi-Provider LLM
+# ══════════════════════════════════════════
+try:
+    import coding_engine as _code_engine
+    _CODE_ENGINE_OK = True
+    print("[v8] ✓ coding_engine cargado")
+except Exception as _e_ce:
+    print(f"[v8] coding_engine no disponible: {_e_ce}")
+    _code_engine = None
+    _CODE_ENGINE_OK = False
+
+try:
+    from multi_llm import MultiLLM as _MultiLLM
+    _MULTI_LLM_OK = True
+    print("[v8] ✓ multi_llm cargado")
+except Exception as _e_ml:
+    print(f"[v8] multi_llm no disponible: {_e_ml}")
+    _MultiLLM = None
+    _MULTI_LLM_OK = False
 
 app = Flask(__name__)
 CORS(app, expose_headers=["X-Request-Id", "X-DeepNova-Version", "X-Elapsed-Ms"])
@@ -1600,6 +1621,16 @@ def chat():
         if ultra or all_models:
             response, fusion_trace = all_models_fusion(msg, system[:6000])
             model = "Fusion(" + ",".join([t[0] for t in fusion_trace]) + ")"
+        elif _CODE_ENGINE_OK and _code_engine and "code" in modes:
+            # 🆕 v8: Motor de coding élite con auto-verificación
+            _ce_result = _code_engine.elite_code_response(
+                msg=msg, llm_call=_llm_call, fast_llm=_fast_llm,
+                base_system=SYSTEM_BASE_EXTENDED,
+                memory=get_memory_prompt(sid),
+                project_context=_code_engine.get_project_context(sid),
+            )
+            response = _ce_result["response"]
+            model = f"Elite-Code({_ce_result['task_type']})"
         else:
             r = get_groq().chat.completions.create(
                 model=model,
@@ -3027,6 +3058,85 @@ try:
     logger.info("🧠 DeepNova v7.0 mejoras IA cargadas (learning, multi-hop, swarm, code, macros)")
 except Exception as _e_v7:
     logger.warning("[v7] mejoras IA no disponibles: %s", _e_v7)
+
+
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v8 — ENDPOINTS ELITE CODING
+# ══════════════════════════════════════════
+if _CODE_ENGINE_OK and _code_engine is not None:
+    @app.route("/api/code/elite", methods=["POST"])
+    def _v8_code_elite():
+        """Genera código con el motor de élite."""
+        d = request.get_json(silent=True) or {}
+        msg = (d.get("message") or d.get("query") or "").strip()
+        sid = (d.get("session_id") or d.get("sid") or "anon").strip()
+        if not msg:
+            return jsonify({"error": "message requerido"}), 400
+        if not _has_groq_key():
+            return jsonify(_groq_missing_response()), 503
+        mem = get_memory_prompt(sid)
+        ctx = _code_engine.get_project_context(sid)
+        result = _code_engine.elite_code_response(
+            msg=msg, llm_call=_llm_call, fast_llm=_fast_llm,
+            base_system=SYSTEM_BASE_EXTENDED, memory=mem,
+            project_context=ctx,
+        )
+        save_history(sid, msg, result["response"], "Elite-Code", ["code", result["task_type"]])
+        return jsonify({"success": True, **result})
+
+    @app.route("/api/code/review", methods=["POST"])
+    def _v8_code_review():
+        """Code review profesional."""
+        d = request.get_json(silent=True) or {}
+        code = (d.get("code") or "").strip()
+        if not code:
+            return jsonify({"error": "code requerido"}), 400
+        result = _code_engine.code_review(code, _llm_call, d.get("language", "auto"))
+        return jsonify({"success": True, **result})
+
+    @app.route("/api/code/tests", methods=["POST"])
+    def _v8_code_tests():
+        """Genera tests para código."""
+        d = request.get_json(silent=True) or {}
+        code = (d.get("code") or "").strip()
+        if not code:
+            return jsonify({"error": "code requerido"}), 400
+        result = _code_engine.generate_tests(
+            code, _llm_call, d.get("language", "auto"), d.get("framework", "auto"))
+        return jsonify({"success": True, **result})
+
+    @app.route("/api/code/context", methods=["POST", "GET", "DELETE"])
+    def _v8_code_context():
+        """Gestiona el contexto de proyecto del usuario."""
+        if request.method == "GET":
+            sid = request.args.get("sid", "anon")
+            ctx = _code_engine.get_project_context(sid)
+            return jsonify({"context": ctx, "chars": len(ctx)})
+        if request.method == "DELETE":
+            d = request.get_json(silent=True) or {}
+            _code_engine.clear_project_context(d.get("sid", "anon"))
+            return jsonify({"success": True})
+        d = request.get_json(silent=True) or {}
+        sid = (d.get("sid") or "anon").strip()
+        ctx = (d.get("context") or d.get("files") or "").strip()
+        if not ctx:
+            return jsonify({"error": "context requerido"}), 400
+        _code_engine.set_project_context(sid, ctx)
+        return jsonify({"success": True, "chars": len(ctx)})
+
+    @app.route("/api/code/providers", methods=["GET"])
+    def _v8_providers():
+        """Lista proveedores LLM disponibles."""
+        providers = ["groq"]
+        if _MULTI_LLM_OK and _MultiLLM:
+            try:
+                m = _MultiLLM(get_groq())
+                providers = m.available_providers()
+            except Exception:
+                pass
+        return jsonify({"providers": providers, "version": DEEPNOVA_VERSION})
+
+    logger.info("🚀 DeepNova v8 Elite Coding endpoints registrados")
 
 
 # 🚀 ARRANQUE
