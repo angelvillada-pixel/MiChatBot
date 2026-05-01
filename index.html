@@ -7568,5 +7568,289 @@ body.hide-left .app{grid-template-columns:1fr var(--rp-w) !important}
      ════════════════════════════════════════════════════════════════════════ -->
 
 
+<!-- 🚀 ENTERPRISE PREMIUM UPGRADE & ARTIFACTS PREVIEW 🚀 -->
+<style>
+/* 1. Animaciones Premium y diseño empresarial */
+:root {
+  --ent-bg: #0b0f19;
+  --ent-panel: rgba(18, 25, 43, 0.65);
+  --ent-glass: blur(24px) saturate(180%);
+  --ent-border: rgba(255,255,255,0.06);
+  --ent-glow: rgba(99, 102, 241, 0.4);
+  --transition-smooth: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+body {
+  background: var(--ent-bg) !important;
+}
+
+/* Chat unobstruido y refinado */
+.chat-main {
+  background: transparent !important;
+  max-width: 1200px;
+  margin: 0 auto;
+  border: none !important;
+  box-shadow: 0 0 80px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+.msgs {
+  scroll-behavior: smooth;
+  padding: 40px 30px !important;
+}
+
+.msg {
+  animation: enterMsg 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both !important;
+}
+@keyframes enterMsg {
+  0% { opacity: 0; transform: translateY(20px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.bot .bubble {
+  background: var(--ent-panel) !important;
+  backdrop-filter: var(--ent-glass);
+  border: 1px solid var(--ent-border) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+}
+
+.user .bubble {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.3) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+/* 2. Optimización de espacio (Layout) */
+.app {
+  background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0b0f19 60%) !important;
+}
+
+.sidebar, .rp {
+  background: var(--ent-panel) !important;
+  backdrop-filter: var(--ent-glass);
+  border-color: var(--ent-border) !important;
+  transition: var(--transition-smooth);
+}
+
+/* Esconder sidebar en modo enfocado o pantallas chicas */
+@media (max-width: 1200px) {
+  .rp {
+    position: fixed; right: -320px; top:0; bottom:0; width:300px; z-index:960;
+  }
+}
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed; left: -280px; z-index: 999;
+  }
+  .chat-main { max-width: 100vw; }
+}
+
+/* 3. Input Enterprise */
+.iw {
+  background: transparent !important;
+  border-top: none !important;
+  padding: 20px 40px 30px !important;
+}
+#inp {
+  background: var(--ent-panel) !important;
+  backdrop-filter: var(--ent-glass);
+  border: 1px solid var(--ent-border) !important;
+  border-radius: 24px !important;
+  padding: 16px 24px !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3) !important;
+  font-size: 15px !important;
+  transition: var(--transition-smooth) !important;
+}
+#inp:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 10px 50px rgba(99,102,241,0.2) !important;
+  transform: translateY(-2px);
+}
+
+/* Botón preview */
+.preview-btn {
+  padding: 4px 12px; font-size: 11px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none; border-radius: 6px; color: #fff;
+  cursor: pointer; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-right: 8px; font-weight: 600;
+}
+.preview-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+/* Preview Modal Enterprise */
+.artifact-modal {
+  position: fixed; inset: 0; z-index: 999999;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.artifact-modal.show {
+  opacity: 1; pointer-events: auto;
+}
+.artifact-box {
+  width: 90vw; height: 90vh;
+  background: #fff; border-radius: 16px; overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+  transform: scale(0.95); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.artifact-modal.show .artifact-box { transform: scale(1); }
+.artifact-header {
+  padding: 12px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.artifact-title { font-weight: 700; color: #0f172a; font-family: 'Inter', sans-serif; display:flex; align-items:center; gap:8px;}
+.artifact-close {
+  background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 8px;
+  cursor: pointer; color: #64748b; transition: 0.2s;
+}
+.artifact-close:hover { background: #ef4444; color: white; }
+.artifact-frame { flex: 1; width: 100%; border: none; background:#fff; }
+
+/* Botones y pills de modos Ultra-modernos */
+.dn-mode-pill {
+  backdrop-filter: blur(10px);
+}
+</style>
+
+<div class="artifact-modal" id="artifactModal">
+  <div class="artifact-box">
+    <div class="artifact-header">
+      <div class="artifact-title">
+        <span style="font-size:18px">✨</span> 
+        <span>Live Preview Studio</span>
+      </div>
+      <button class="artifact-close" onclick="closePreview()">✕</button>
+    </div>
+    <iframe class="artifact-frame" id="artifactFrame" sandbox="allow-scripts allow-modals"></iframe>
+  </div>
+</div>
+
+<script>
+// 1. Lógica para ULTRA Mode - Conecta todos los modelos sin romper nada
+window.toggleUltra = function() {
+  if(window.DN7) {
+    DN7.setMode('combo');
+    DN7.State.selected = DN7.MODELS.map(m => m.id);
+    
+    // UI Updates
+    document.querySelectorAll('.dn7-model').forEach(el => el.classList.add('selected'));
+    const p = document.getElementById('dn7Pipeline');
+    if(p) p.innerHTML = '<span class="dn7-pipeline-step" style="background: linear-gradient(90deg, #f59e0b, #ef4444);">⚡ ULTRA: TODOS LOS MODELOS OPERANDO EN SINCRONÍA ⚡</span>';
+    
+    DN7.notify('🔥 MODO ULTRA ACTIVADO: Máxima potencia computacional desplegada', 'success');
+  } else {
+    console.log("ULTRA mode trigger (DN7 not found yet)");
+  }
+};
+
+// Auto-trigger Ultra if we click a pill that says "ultra"
+document.addEventListener('click', e => {
+  const t = e.target.closest('.mode-pill, .dn7-mode-pill, .mp-chat, .mp-code');
+  if(t && (t.textContent.toLowerCase().includes('ultra') || t.innerText.toLowerCase().includes('ultra'))) {
+    window.toggleUltra();
+  }
+});
+
+// 2. Lógica para Live Preview (Artifacts / Google Studio)
+window.openPreview = function(code, type) {
+  const modal = document.getElementById('artifactModal');
+  const frame = document.getElementById('artifactFrame');
+  
+  let content = code;
+  if(type === 'html') {
+    if(!content.includes('<html')) {
+      content = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:sans-serif;padding:20px;}</style></head><body>${content}</body></html>`;
+    }
+  } else if (type === 'javascript' || type === 'js') {
+    content = `<!DOCTYPE html><html><body><script>${code}<` + `/script></body></html>`;
+  } else if (type === 'css') {
+    content = `<!DOCTYPE html><html><head><style>${code}</style></head><body><div class="preview-target">Estilos aplicados. Agrega HTML para probar.</div></body></html>`;
+  }
+  
+  const blob = new Blob([content], {type: 'text/html;charset=utf-8'});
+  frame.src = URL.createObjectURL(blob);
+  modal.classList.add('show');
+};
+
+window.closePreview = function() {
+  document.getElementById('artifactModal').classList.remove('show');
+  document.getElementById('artifactFrame').src = 'about:blank';
+};
+
+// Observador para inyectar botón de Preview en nuevos bloques de código
+const previewObserver = new MutationObserver((mutations) => {
+  mutations.forEach(m => {
+    m.addedNodes.forEach(node => {
+      if(node.nodeType === 1) { // Element
+        let blocks = node.querySelectorAll ? node.querySelectorAll('.cb') : [];
+        if(node.classList && node.classList.contains('cb')) blocks = [node];
+        
+        blocks.forEach(cb => {
+          const langEl = cb.querySelector('.cbl');
+          if(!langEl) return;
+          
+          const lang = langEl.textContent.toLowerCase().trim();
+          if(['html', 'css', 'javascript', 'js'].includes(lang)) {
+            const header = cb.querySelector('.cbh');
+            if(header && !header.querySelector('.preview-btn')) {
+              const btn = document.createElement('button');
+              btn.className = 'preview-btn';
+              btn.innerHTML = '👁️ Vista Previa';
+              
+              btn.onclick = () => {
+                const codeEl = cb.querySelector('code:not(.cbl)');
+                if(codeEl) {
+                  window.openPreview(codeEl.textContent, lang);
+                }
+              };
+              
+              const copyBtn = header.querySelector('.cpb');
+              if(copyBtn) {
+                header.insertBefore(btn, copyBtn);
+              } else {
+                header.appendChild(btn);
+              }
+            }
+          }
+        });
+      }
+    });
+  });
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  const msgsContainer = document.querySelector('.msgs');
+  if(msgsContainer) {
+    previewObserver.observe(msgsContainer, { childList: true, subtree: true });
+  }
+  
+  // Procesar bloques ya existentes por si acaso
+  document.querySelectorAll('.cb').forEach(cb => {
+    const langEl = cb.querySelector('.cbl');
+    if(!langEl) return;
+    const lang = langEl.textContent.toLowerCase().trim();
+    if(['html', 'css', 'javascript', 'js'].includes(lang)) {
+      const header = cb.querySelector('.cbh');
+      if(header && !header.querySelector('.preview-btn')) {
+        const btn = document.createElement('button');
+        btn.className = 'preview-btn';
+        btn.innerHTML = '👁️ Vista Previa';
+        btn.onclick = () => {
+          const codeEl = cb.querySelector('code:not(.cbl)');
+          if(codeEl) window.openPreview(codeEl.textContent, lang);
+        };
+        const copyBtn = header.querySelector('.cpb');
+        if(copyBtn) header.insertBefore(btn, copyBtn);
+        else header.appendChild(btn);
+      }
+    }
+  });
+});
+</script>
 </body>
 </html>
