@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="description" content="DeepNova v2 · Premium AI Workspace fusionado con Facil-con-IA">
+
+    <title>DeepNova · v2 Premium</title>
+
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <link rel="stylesheet" href="/v2/static/style.css">
+
+    <!-- JSZip (mismo CDN que Facil-con-IA) -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Marked + DOMPurify para markdown seguro -->
+    <script defer src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
+    <!-- Highlight.js para color de código -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
+    <script defer src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+</head>
+<body>
+
+<div class="dn-app" id="dnApp">
+
+    <!-- ════════════════════════════════════════════════════════════
+         HEADER
+         ════════════════════════════════════════════════════════════ -->
+    <header class="dn-header">
+        <div class="dn-header-left">
+            <button class="dn-icon-btn" id="btnSidebar" title="Historial (⌘+B)">☰</button>
+            <div class="dn-logo-wrap">
+                <div class="dn-logo">DN</div>
+                <div>
+                    <div class="dn-title">DeepNova</div>
+                    <div class="dn-subtitle">v2 Premium · NeuroCore-X</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dn-header-right">
+            <button class="dn-pill-btn" id="btnUltra" title="Modo ULTRA (NeuroCore-X)">
+                <span>🌟</span><span class="label">ULTRA</span>
+            </button>
+            <button class="dn-pill-btn" id="btnMulti" title="Multi-IA verificación">
+                <span>🧠</span><span class="label">Multi</span>
+            </button>
+            <button class="dn-pill-btn" id="btnPrompts" title="Biblioteca de prompts (⌘+P)">
+                <span>📚</span><span class="label">Prompts</span>
+            </button>
+            <button class="dn-icon-btn" id="btnTheme" title="Tema">🎨</button>
+            <button class="dn-icon-btn" id="btnSettings" title="Configuración">⚙️</button>
+            <span class="dn-status-dot" id="statusDot" title="Conectado"></span>
+        </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════════════════════
+         MAIN
+         ════════════════════════════════════════════════════════════ -->
+    <main class="dn-main">
+
+        <!-- ─── SIDEBAR ─────────────────────────────────────────── -->
+        <aside class="dn-sidebar" id="sidebar">
+            <div class="dn-sidebar-head">
+                <button class="dn-new-chat" id="btnNewChat">
+                    <span>➕</span> Nueva conversación
+                </button>
+                <div class="dn-search-box">
+                    <input type="text" id="searchSessions" placeholder="Buscar sesiones...">
+                </div>
+            </div>
+            <div class="dn-session-list" id="sessionList">
+                <!-- inyectado por JS -->
+            </div>
+            <div class="dn-sidebar-foot">
+                <span>🚀</span>
+                <span id="versionLabel">DeepNova v2</span>
+            </div>
+        </aside>
+
+        <!-- ─── WORKSPACE (Chat + Sandbox split) ────────────────── -->
+        <section class="dn-workspace">
+
+            <!-- ═══ Pane izquierdo · CHAT ═══ -->
+            <div class="dn-pane left" id="paneChat">
+
+                <div class="dn-chat-history" id="chatHistory">
+                    <!-- Welcome screen -->
+                    <div class="dn-welcome" id="welcomeScreen">
+                        <h1>Bienvenido a DeepNova</h1>
+                        <p>Plataforma IA premium con <strong>NeuroCore-X</strong>, multi-modelo, sandbox interactivo, y memoria persistente.</p>
+                        <div class="dn-suggestions" id="welcomeSuggestions">
+                            <!-- inyectado por JS desde /api/suggestions -->
+                        </div>
+                    </div>
+                    <!-- Mensajes inyectados por JS -->
+                </div>
+
+                <!-- Vista previa de adjunto -->
+                <div class="dn-attach-preview hidden" id="attachPreview">
+                    <span class="ico">📎</span>
+                    <span class="name">archivo</span>
+                    <span class="close" id="attachClose" title="Quitar">✕</span>
+                </div>
+
+                <!-- Input area -->
+                <div class="dn-input-area">
+                    <div class="dn-input-shell">
+                        <button class="dn-tool-btn" id="btnAttach" title="Adjuntar archivo">📎</button>
+                        <button class="dn-tool-btn" id="btnMic" title="Dictado por voz">🎤</button>
+
+                        <textarea id="promptInput" rows="1"
+                                  placeholder="Escribe tu mensaje... (Enter envía · Shift+Enter salto de línea)"></textarea>
+
+                        <div class="dn-tools-row">
+                            <button class="dn-tool-btn" id="btnExecute" title="Ejecutar código de la respuesta">▶️</button>
+                            <button class="dn-send-btn" id="btnSend" title="Enviar">➤</button>
+                        </div>
+                    </div>
+
+                    <input type="file" id="fileInput" hidden
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.txt,.md,.js,.html,.css,.py,.json,.csv,.pdf">
+
+                    <div class="dn-input-foot">
+                        <div class="left">
+                            <span id="charCount">0 chars</span>
+                            <span id="modelHint">Auto · DeepNova decide</span>
+                        </div>
+                        <div class="right">
+                            <span class="dn-mini-tag" id="modeTag">chat</span>
+                            <span id="sessionShort">sin sesión</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ Resizer ═══ -->
+            <div class="dn-resizer" id="dnResizer"></div>
+
+            <!-- ═══ Pane derecho · SANDBOX ═══ -->
+            <div class="dn-pane right" id="paneSandbox">
+
+                <div class="dn-sandbox-head">
+                    <h2><span>🧪</span> Sandbox</h2>
+                    <div class="dn-sandbox-tabs">
+                        <button class="dn-tab active" data-tab="preview">👁️ Preview</button>
+                        <button class="dn-tab" data-tab="code">💻 Código</button>
+                        <button class="dn-tab" data-tab="python">🐍 Python</button>
+                    </div>
+                    <div class="dn-sandbox-actions">
+                        <button class="dn-icon-btn" id="btnDownloadHTML" title="Descargar HTML">💾</button>
+                        <button class="dn-icon-btn" id="btnDownloadZIP"  title="Descargar ZIP">📦</button>
+                        <button class="dn-icon-btn" id="btnOpenTab"      title="Abrir en pestaña nueva">↗️</button>
+                        <button class="dn-icon-btn" id="btnSandboxBack"  title="Volver al chat (móvil)">←</button>
+                    </div>
+                </div>
+
+                <div class="dn-sandbox-body">
+                    <iframe id="sandboxFrame" sandbox="allow-scripts allow-modals allow-forms allow-same-origin"></iframe>
+                    <pre class="dn-sandbox-code hidden" id="sandboxCode"></pre>
+                    <pre class="dn-sandbox-code hidden" id="sandboxPython"></pre>
+                    <div class="dn-sandbox-empty" id="sandboxEmpty">
+                        <div class="ico">🪄</div>
+                        <h3>Sandbox vacío</h3>
+                        <p>Pídele a DeepNova que genere código (HTML/CSS/JS o Python) y se renderizará aquí en tiempo real.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MODAL · Theme picker
+     ════════════════════════════════════════════════════════════════ -->
+<div class="dn-modal-overlay hidden" id="modalTheme">
+    <div class="dn-modal">
+        <div class="dn-modal-head">
+            <h2>🎨 Temas premium</h2>
+            <button class="dn-icon-btn" data-close>✕</button>
+        </div>
+        <div class="dn-modal-body">
+            <p style="color:var(--text-secondary);font-size:.9rem;margin-bottom:14px;">
+                Personaliza la apariencia de tu workspace. Los temas se sincronizan con <code>/api/themes</code>.
+            </p>
+            <div class="dn-theme-grid" id="themeGrid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MODAL · Prompt library
+     ════════════════════════════════════════════════════════════════ -->
+<div class="dn-modal-overlay hidden" id="modalPrompts">
+    <div class="dn-modal lg">
+        <div class="dn-modal-head">
+            <h2>📚 Biblioteca de prompts</h2>
+            <button class="dn-icon-btn" data-close>✕</button>
+        </div>
+        <div class="dn-modal-body">
+            <div class="dn-prompt-cats" id="promptCats"></div>
+            <div class="dn-prompt-list" id="promptList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MODAL · Settings
+     ════════════════════════════════════════════════════════════════ -->
+<div class="dn-modal-overlay hidden" id="modalSettings">
+    <div class="dn-modal">
+        <div class="dn-modal-head">
+            <h2>⚙️ Configuración</h2>
+            <button class="dn-icon-btn" data-close>✕</button>
+        </div>
+        <div class="dn-modal-body">
+            <div style="display:flex;flex-direction:column;gap:14px;">
+                <label style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <span>Modo ULTRA por defecto</span>
+                    <input type="checkbox" id="cfgUltraDefault">
+                </label>
+                <label style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <span>Multi-IA verificación</span>
+                    <input type="checkbox" id="cfgMultiDefault">
+                </label>
+                <label style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <span>Voz al recibir respuesta</span>
+                    <input type="checkbox" id="cfgVoice">
+                </label>
+                <label style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <span>Auto-renderizar código en sandbox</span>
+                    <input type="checkbox" id="cfgAutoSandbox" checked>
+                </label>
+                <hr style="border-color:var(--border-color);">
+                <button class="dn-btn secondary" id="btnExportHistory">💾 Exportar historial JSON</button>
+                <button class="dn-btn secondary" id="btnHealth">🩺 Diagnóstico backend</button>
+                <button class="dn-btn danger" id="btnClearAll">🗑️ Limpiar todo (local)</button>
+                <hr style="border-color:var(--border-color);">
+                <div style="font-size:.8rem;color:var(--text-muted);">
+                    <div>Backend: <span id="cfgBackend">/v2 → DeepNova core</span></div>
+                    <div>Versión: <span id="cfgVersion">…</span></div>
+                    <div>Sesión actual: <span id="cfgSession">…</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     TOAST CONTAINER
+     ════════════════════════════════════════════════════════════════ -->
+<div class="dn-toast-wrap" id="toastWrap"></div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SCRIPTS · orden importa (config → ui → chat → sandbox → app)
+     ════════════════════════════════════════════════════════════════ -->
+<script src="/v2/static/ui.js" defer></script>
+<script src="/v2/static/chat.js" defer></script>
+<script src="/v2/static/sandbox.js" defer></script>
+<script src="/v2/static/app.js" defer></script>
+
+</body>
+</html>
