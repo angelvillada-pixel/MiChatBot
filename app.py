@@ -3137,7 +3137,15 @@ if _CODE_ENGINE_OK and _code_engine is not None:
         return jsonify({"providers": providers, "version": DEEPNOVA_VERSION})
 
     logger.info("🚀 DeepNova v8 Elite Coding endpoints registrados")
-
+# ══════════════════════════════════════════
+# 🆕 DEEPNOVA v2-FRONTEND — UI premium /v2
+# 100% aditivo · NO toca '/' ni 'index.html' originales
+# ══════════════════════════════════════════
+try:
+    from app_v2_patch import register_v2
+    register_v2(app, logger=logger)
+except Exception as _e_v2:
+    logger.warning("[v2] patch no disponible: %s", _e_v2)
 
 # 🚀 ARRANQUE
 # ══════════════════════════════════════════
